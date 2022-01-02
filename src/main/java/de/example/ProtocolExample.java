@@ -29,12 +29,13 @@ public class ProtocolExample {
         NetworkClient nc = ProtocolFactory.createClient(p, p);
         nc.setSocket("127.0.0.1", 9999);
 
+        // send packets
         MyPacket packet = new MyPacket();
         nc.send(packet);
 
+        // create a Server (usually it should start before the client connects to it)
         NetworkServer ns = ProtocolFactory.createServer(p, p);
         ns.setSocket(9999);
-
         ServerBuilder.from(ns)
                      .setClientHandler(MyHandler.class)
                      //or

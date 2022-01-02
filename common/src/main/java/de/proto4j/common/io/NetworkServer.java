@@ -72,7 +72,8 @@ public class NetworkServer implements ProtocolFactory.FactorySocketHolder, Annot
             try {
                 r.run();
             } catch (Exception e) {
-                if (e instanceof InvocationTargetException ex) {
+                if (e instanceof InvocationTargetException) {
+                    InvocationTargetException ex = (InvocationTargetException) e;
                     if (ex.getTargetException() instanceof SocketTimeoutException
                             || ex.getTargetException() instanceof SocketException) try {
                         getProtocolUtil().close(networkSocket);
