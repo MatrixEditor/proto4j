@@ -1,6 +1,6 @@
 package de.proto4j.common.annotation.event; //@date 31.12.2021
 
-import de.proto4j.common.annotation.AnnotatedElement;
+import de.proto4j.common.annotation.AnnotatedObject;
 import de.proto4j.common.annotation.Item;
 
 /**
@@ -9,7 +9,7 @@ import de.proto4j.common.annotation.Item;
  * <p><strong>WARNING: Events are not serializable, so no communication of events
  * through the network is possible</strong></p>
  */
-public class Event implements AnnotatedElement {
+public class Event implements AnnotatedObject {
 
     /**
      * The identifier od this Event.

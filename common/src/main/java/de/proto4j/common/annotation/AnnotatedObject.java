@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public interface AnnotatedElement {
+public interface AnnotatedObject {
 
     default <R extends Annotation> R lookup(Class<R> c) {
         return lookup(c, getClass()::getDeclaredAnnotation);

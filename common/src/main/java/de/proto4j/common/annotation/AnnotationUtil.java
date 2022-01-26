@@ -71,7 +71,7 @@ public class AnnotationUtil {
             IllegalAccessException {
         Field f_ = fieldOf(name, ref, i -> i.hasSetter() && i.isAccessible());
 
-        if (f_.getType().isInstance(element)) {
+        if (f_.getType().isInstance(element) || f_.getType().isAssignableFrom(element.getClass())) {
             f_.set(ref, element);
         }
     }

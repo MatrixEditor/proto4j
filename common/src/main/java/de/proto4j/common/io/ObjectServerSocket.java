@@ -1,7 +1,7 @@
 package de.proto4j.common.io; //@date 29.12.2021
 
 import de.proto4j.common.ProtocolFactory;
-import de.proto4j.common.annotation.AnnotatedElement;
+import de.proto4j.common.annotation.AnnotatedObject;
 import de.proto4j.common.annotation.IServerSocket;
 import de.proto4j.common.annotation.ISocket;
 import de.proto4j.common.annotation.Item;
@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 
 @IServerSocket(accept = @ISocket.SocketMethod(name = "accept", returnClass = ObjectSocket.class))
-public class ObjectServerSocket implements ProtocolFactory.FactoryServerSocket<ObjectSocket>, AnnotatedElement {
+public class ObjectServerSocket implements ProtocolFactory.FactoryServerSocket<ObjectSocket>, AnnotatedObject {
 
     @Item(name = "serverSocket.low", hasSetter = false)
     private final ServerSocket serverSocket;

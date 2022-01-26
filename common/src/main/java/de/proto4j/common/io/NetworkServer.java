@@ -1,7 +1,7 @@
 package de.proto4j.common.io; //@date 29.12.2021
 
 import de.proto4j.common.*;
-import de.proto4j.common.annotation.AnnotatedElement;
+import de.proto4j.common.annotation.AnnotatedObject;
 import de.proto4j.common.annotation.AnnotationUtil;
 import de.proto4j.common.annotation.Item;
 import de.proto4j.common.exception.IProtocolException;
@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 
-public class NetworkServer implements ProtocolFactory.FactorySocketHolder, AnnotatedElement {
+public class NetworkServer implements ProtocolFactory.FactorySocketHolder, AnnotatedObject {
 
     private final ProtocolUtil protocolUtil = new ProtocolUtil();
 

@@ -20,36 +20,36 @@ public final class ProtocolFactory {
 
     private ProtocolFactory() {}
 
-    public static <P_OUT> P_OUT createPacket(Protocol protocol, Object...params) throws IProtocolException,
+    public static <P_OUT> P_OUT createPacket(Protocol protocol, Object... params) throws IProtocolException,
             NoSuchMethodException, IllegalAccessException {
         return createUnknown(protocol, Protocol.PACKET_ATTRIBUTE, params);
     }
 
-    public static <P_OUT> P_OUT createSocket(Protocol protocol, Object...params) throws IProtocolException,
+    public static <P_OUT> P_OUT createSocket(Protocol protocol, Object... params) throws IProtocolException,
             NoSuchMethodException, IllegalAccessException {
         return createUnknown(protocol, Protocol.SOCKET_ATTRIBUTE, params);
     }
 
-    public static <P_OUT> P_OUT createClient(Protocol protocol, Object...params) throws IProtocolException,
+    public static <P_OUT> P_OUT createClient(Protocol protocol, Object... params) throws IProtocolException,
             NoSuchMethodException, IllegalAccessException {
         return createUnknown(protocol, Protocol.CLIENT_ATTRIBUTE, params);
     }
 
-    public static <P_OUT> P_OUT createServer(Protocol protocol, Object...params) throws IProtocolException,
+    public static <P_OUT> P_OUT createServer(Protocol protocol, Object... params) throws IProtocolException,
             NoSuchMethodException, IllegalAccessException {
         return createUnknown(protocol, Protocol.SERVER_ATTRIBUTE, params);
     }
 
-    public static <P_OUT> P_OUT createServerSocket(Protocol protocol, Object...params) throws IProtocolException,
+    public static <P_OUT> P_OUT createServerSocket(Protocol protocol, Object... params) throws IProtocolException,
             NoSuchMethodException, IllegalAccessException {
         return createUnknown(protocol, Protocol.SERVER_SOCKET_ATTRIBUTE, params);
     }
 
     @SuppressWarnings("unchecked")
-    private static <OUT> OUT createUnknown(Protocol protocol, String attrName, Object...params)
+    private static <OUT> OUT createUnknown(Protocol protocol, String attrName, Object... params)
             throws IProtocolException, NoSuchMethodException, IllegalAccessException {
-        Map<String, Class<?>> attrs = protocol.get("attributes");
-        Class<OUT> p_outClass = null;
+        Map<String, Class<?>> attrs      = protocol.get("attributes");
+        Class<OUT>            p_outClass = null;
         if (attrs.containsKey(attrName)) {
             p_outClass = (Class<OUT>) attrs.get(attrName);
         }
@@ -69,7 +69,7 @@ public final class ProtocolFactory {
     }
 
     public static interface FactorySocketHolder {
-        void setSocket(Object...params) throws Exception;
+        void setSocket(Object... params) throws Exception;
     }
 
     public static interface FactoryClient extends FactorySocketHolder {
@@ -108,6 +108,20 @@ public final class ProtocolFactory {
             return new ProtocolBuilder();
         }
 
+        public static Protocol newProtocol(String name, Class<?> client, Class<?> socket, Class<?> s_socket,
+                                           Class<?> server, Class<?> packetReader, Class<?> packetType) {
+            return newProtocol(name, client, socket, s_socket, server, packetReader, packetType, null, null);
+        }
+
+        public static Protocol newProtocol(String name,
+                                           Class<?> client, Class<?> socket, Class<?> s_socket, Class<?> server,
+                                           Class<?> packetReader, Class<?> packetType, Class<?> payloadType,
+                                           Class<?> headerType) {
+            return newInstance().setClient(client).setPayloadType(payloadType).setHeaderType(headerType)
+                                .setServer(server).setServerSocket(s_socket).setSocket(socket)
+                                .setName(name).setPacketType(packetType).setPacketReader(packetReader).create();
+        }
+
         public ProtocolBuilder setClient(Class<?> client) {
             return addAttribute(Protocol.CLIENT_ATTRIBUTE, client);
         }
@@ -143,7 +157,7 @@ public final class ProtocolFactory {
         }
 
         public ProtocolBuilder addAttribute(String name, Class<?> c) {
-            attributes.putIfAbsent(name, c);
+            if (name != null && c != null) attributes.putIfAbsent(name, c);
             return this;
         }
 
@@ -184,7 +198,7 @@ public final class ProtocolFactory {
             return this;
         }
 
-        public ServerBuilder setServerSocket(Object...params) throws IProtocolException, NoSuchMethodException,
+        public ServerBuilder setServerSocket(Object... params) throws IProtocolException, NoSuchMethodException,
                 IllegalAccessException {
             server.setSocket(params);
             return this;
@@ -198,7 +212,7 @@ public final class ProtocolFactory {
 
         public ServerBuilder setClientHandler(Class<? extends FactoryClientHandler<?>> handler)
                 throws ProtocolItemNotFoundException, IllegalAccessException {
-            AnnotationUtil.set("network.handler", handler, server.get("server.socket"));
+            AnnotationUtil.set("client.handler", handler, server.get("server.socket"));
             return this;
         }
 

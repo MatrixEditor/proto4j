@@ -3,11 +3,11 @@ package de.proto4j.common.io; //@date 29.12.2021
 import de.proto4j.common.Protocol;
 import de.proto4j.common.ProtocolFactory;
 import de.proto4j.common.ProtocolUtil;
-import de.proto4j.common.annotation.AnnotatedElement;
+import de.proto4j.common.annotation.AnnotatedObject;
 import de.proto4j.common.annotation.Item;
 import de.proto4j.common.exception.IProtocolException;
 
-public class NetworkClient implements ProtocolFactory.FactoryClient, AnnotatedElement {
+public class NetworkClient implements ProtocolFactory.FactoryClient, AnnotatedObject {
 
     @Item(name = "protocol.util.instance", isAccessible = false, hasSetter = false)
     private final ProtocolUtil protocolUtil0 = new ProtocolUtil();

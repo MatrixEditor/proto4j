@@ -20,7 +20,8 @@ public class ProtocolUtil {
 
     public static final ProtocolUtil PROTOCOL_UTIL = new ProtocolUtil();
 
-    public ProtocolUtil() {}
+    public ProtocolUtil() {
+    }
 
     public static ProtocolUtil getInstance() {
         return PROTOCOL_UTIL;
@@ -75,9 +76,14 @@ public class ProtocolUtil {
         Objects.requireNonNull(p);
 
         Map<String, Class<?>> map = AnnotationUtil.get("attributes", p);
-        if (!map.containsKey(Protocol.PACKET_READER_ATTRIBUTE))
+        if (!map.containsKey(Protocol.PACKET_READER_ATTRIBUTE)) {
+            if (input.length == 1) {
+                try {
+                    return (R) input[0];
+                } catch (ClassCastException ignored) {}
+            }
             throw new ProtocolItemNotFoundException("Attribute '" + Protocol.PACKET_READER_ATTRIBUTE + "' not found!");
-
+        }
         Class<?> protocolReader = map.get(Protocol.PACKET_READER_ATTRIBUTE);
         if (protocolReader != null) {
             IProtocolReader pw = AnnotationUtil.lookup(protocolReader, IProtocolReader.class);
@@ -94,7 +100,7 @@ public class ProtocolUtil {
                 }
             }
         }
-        throw new ProtocolClassException();
+        throw new ProtocolClassException("PacketReader is null or not found!");
     }
 
     public <SOCKET, R> R receive(SOCKET s, Object... params)

@@ -1,9 +1,8 @@
 package de.proto4j.common; //@date 30.12.2021
 
 
-import de.proto4j.common.annotation.AnnotatedElement;
+import de.proto4j.common.annotation.AnnotatedObject;
 import de.proto4j.common.annotation.Item;
-import de.proto4j.common.exception.ProtocolItemNotFoundException;
 
 import java.io.Serializable;
 import java.net.ProtocolFamily;
@@ -55,7 +54,7 @@ import java.util.Map;
  * @see ProtocolFactory
  * @see ProtocolUtil
  */
-public final class Protocol implements Serializable, AnnotatedElement, ProtocolFamily {
+public final class Protocol implements Serializable, AnnotatedObject, ProtocolFamily {
 
     /**
      * The packet-type class defined with this attribute. Important: this class
@@ -105,7 +104,7 @@ public final class Protocol implements Serializable, AnnotatedElement, ProtocolF
      * @apiNote {@code de.proto4j.util.AnnotationUtil.get("name", protocolObject)}
      */
     @Item(name = "name", hasSetter = false)
-    private final String name;
+    private final String _name;
 
     /**
      * All necessary attributes defined in this protocol-object. This map only  can be
@@ -122,7 +121,7 @@ public final class Protocol implements Serializable, AnnotatedElement, ProtocolF
      * @param name the protocol name
      */
     public Protocol(String name) {
-        this.name = name;
+        this._name = name;
     }
 
     /**
@@ -132,6 +131,6 @@ public final class Protocol implements Serializable, AnnotatedElement, ProtocolF
      */
     @Override
     public String name() {
-        return name;
+        return _name;
     }
 }

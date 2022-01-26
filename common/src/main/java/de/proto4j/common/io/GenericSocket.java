@@ -1,62 +1,43 @@
-package de.proto4j.common.io; //@date 29.12.2021
+package de.proto4j.common.io; //@date 02.01.2022
 
-
+import de.proto4j.common.ProtocolUtil;
+import de.proto4j.common.annotation.AnnotationUtil;
 import de.proto4j.common.annotation.ISocket;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
+import java.util.Objects;
 
 @ISocket(
         send = @ISocket.SocketMethod(name = "send", params = {Object.class}),
         receive = @ISocket.SocketMethod(name = "waitForInput", returnClass = Object.class)
 )
-public class ObjectSocket {
+public class GenericSocket<S_IN extends InputStream, S_OUT extends OutputStream> {
 
     private final Object socketLock = new Object();
     private final Object inputLock  = new Object();
     private final Object outputLock = new Object();
 
-    private Socket             socket;
-    private ObjectInputStream  reader;
-    private ObjectOutputStream writer;
+    private Socket socket;
+    private S_IN   in;
+    private S_OUT  out;
 
-    /**
-     * Instantiates a new Basic network connection.
-     *
-     * @throws IOException the io exception
-     */
-    public ObjectSocket() throws IOException, NoSuchMethodException {
-        this(new Socket());
+    public GenericSocket(Class<S_IN> i, Class<S_OUT> o) throws IOException, NoSuchMethodException {
+        this(new Socket(), i, o);
     }
 
-    /**
-     * Instantiates a new Basic network connection.
-     *
-     * @param host the host
-     * @param port the port
-     * @throws IOException the io exception
-     */
-    public ObjectSocket(String host, Integer port) throws IOException, NoSuchMethodException {
-        this(new Socket(host, port));
+    public GenericSocket(String host, Integer port, Class<S_IN> i, Class<S_OUT> o) throws IOException,
+            NoSuchMethodException {
+        this(new Socket(host, port), i, o);
     }
 
-    /**
-     * Instantiates a new Basic network connection.
-     *
-     * @param socket the socket
-     * @throws IOException the io exception
-     */
-    public ObjectSocket(Socket socket) throws IOException, NoSuchMethodException {
-        this.socket = (socket);
-        this.socket.setReuseAddress(true);
-        this.socket.setSoTimeout(5000);
+    public GenericSocket(Socket s, Class<S_IN> i, Class<S_OUT> o) throws IOException, NoSuchMethodException {
+        Objects.requireNonNull(i);
+        Objects.requireNonNull(o);
 
-        //IMPORTANT: At first the output-Stream
-        this.writer = (new ObjectOutputStream(socket.getOutputStream()));
-        this.reader = (new ObjectInputStream(socket.getInputStream()));
+        socket = s;
+        out = (S_OUT) ProtocolUtil.getInstance().newObject(o, socket.getInputStream());
+        in  = (S_IN) ProtocolUtil.getInstance().newObject(i, socket.getInputStream());
     }
 
     /**
@@ -68,10 +49,10 @@ public class ObjectSocket {
      * @throws ClassNotFoundException If the class of a serialized object cannot
      *                                be found.
      */
-    public Object waitForInput() throws IOException, ClassNotFoundException {
+    public Object waitForInput(String method, Object...params) throws IOException, ClassNotFoundException {
         if (!socket.isClosed()) {
             synchronized (socketLock) {
-                return getReader().readObject();
+                return AnnotationUtil.supply(method, getIn(), params);
             }
         }
         throw new IOException("Connection is closed");
@@ -80,12 +61,11 @@ public class ObjectSocket {
     /**
      * Sends a message over the network to the end of the SocketChannel.
      *
-     * @param o the output object
      * @throws IOException Any of the usual Input/Output related exceptions
      */
-    public void send(Object o) throws IOException {
-        if (!socket.isClosed() && o != null) {
-            getWriter().writeObject(o);
+    public void send(Object...params) throws IOException {
+        if (!socket.isClosed() && params != null) {
+            AnnotationUtil.supply("send", getOut(), params);
         }
     }
 
@@ -110,9 +90,9 @@ public class ObjectSocket {
      */
     public void closeOutput() throws IOException {
         synchronized (this.outputLock) {
-            if (writer != null) {
-                closeObj(writer);
-                writer = null;
+            if (out != null) {
+                closeObj(out);
+                out = null;
             }
         }
     }
@@ -124,9 +104,9 @@ public class ObjectSocket {
      */
     public void closeInput() throws IOException {
         synchronized (this.inputLock) {
-            if (reader != null) {
-                closeObj(reader);
-                reader = null;
+            if (in != null) {
+                closeObj(in);
+                in = null;
             }
         }
     }
@@ -135,12 +115,12 @@ public class ObjectSocket {
         return socket;
     }
 
-    private ObjectInputStream getReader() {
-        return reader;
+    private S_IN getIn() {
+        return in;
     }
 
-    private ObjectOutputStream getWriter() {
-        return writer;
+    private S_OUT getOut() {
+        return out;
     }
 
     private void closeObj(Closeable closeable) throws IOException {
@@ -161,4 +141,5 @@ public class ObjectSocket {
         closeInput();
         closeOutput();
     }
+
 }
