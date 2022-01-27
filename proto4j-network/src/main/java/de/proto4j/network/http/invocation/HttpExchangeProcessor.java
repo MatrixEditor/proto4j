@@ -5,7 +5,7 @@ import de.proto4j.annotation.http.requests.RequestParam;
 
 import java.lang.reflect.Parameter;
 
-public class HttpExchangeReference implements InvocationReference<HttpExchange, Object> {
+public class HttpExchangeProcessor implements ParameterProcessor<HttpExchange, Object> {
 
     public static final String HEADER_USER_AGENT = "header.user-agent";
     public static final String BODY              = "body";
@@ -16,7 +16,7 @@ public class HttpExchangeReference implements InvocationReference<HttpExchange, 
             if (p0.isAnnotationPresent(RequestParam.class)) {
                 String name = p0.getDeclaredAnnotation(RequestParam.class).name();
 
-                for (HttpExchangeIdent n : HttpExchangeIdent.values()) {
+                for (HttpExchangeRequestConstant n : HttpExchangeRequestConstant.values()) {
                     if (n.getName().equals(name)) {
                         Object o = n.apply(exchange);
                         if (o.getClass().isAssignableFrom(p0.getType())) {

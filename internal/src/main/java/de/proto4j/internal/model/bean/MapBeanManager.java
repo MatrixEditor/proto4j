@@ -4,7 +4,7 @@ import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class MapBeanManager implements BeanManager {
+public class MapBeanManager implements BeanManager {
 
     private final Map<Class<? extends Annotation>, SimpleBeanCacheList> beanCache = new HashMap<>();
 
@@ -42,6 +42,15 @@ public final class MapBeanManager implements BeanManager {
                 beanCache.get(theAnnotationClass).add(theClassToBeMapped, o);
                 return true;
             }
+        }
+        return false;
+    }
+
+    protected boolean mapIfAbsent(Class<?> c, Class<? extends Annotation> a, Object instance) {
+        if (c != null && a != null) {
+            if (!beanCache.containsKey(a)) addCategory(a);
+            beanCache.get(a).add(c, instance);
+            return true;
         }
         return false;
     }

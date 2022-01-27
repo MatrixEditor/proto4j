@@ -9,9 +9,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.Function;
 
-public enum HttpExchangeIdent {
+public enum HttpExchangeRequestConstant {
 
-    REQUEST_INPUT(HttpExchangeReference.BODY, e -> {
+    REQUEST_INPUT(HttpExchangeProcessor.BODY, e -> {
         try (BufferedInputStream bis = new BufferedInputStream(e.getRequestBody())) {
             return new String(bis.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException ex) { /**/ }
@@ -19,7 +19,7 @@ public enum HttpExchangeIdent {
     }, String.class),
 
     @UnsafeOperation
-    REQUEST_HEADER_USER_AGENT(HttpExchangeReference.HEADER_USER_AGENT,
+    REQUEST_HEADER_USER_AGENT(HttpExchangeProcessor.HEADER_USER_AGENT,
                               e -> e.getRequestHeaders().get("User-agent"), List.class);
 
     private final String   name;
@@ -27,7 +27,7 @@ public enum HttpExchangeIdent {
 
     private final Function<HttpExchange, Object> mapper;
 
-    HttpExchangeIdent(String name, Function<HttpExchange, Object> mapper, Class<?> returnType) {
+    HttpExchangeRequestConstant(String name, Function<HttpExchange, Object> mapper, Class<?> returnType) {
         this.name       = name;
         this.returnType = returnType;
         this.mapper     = mapper;
