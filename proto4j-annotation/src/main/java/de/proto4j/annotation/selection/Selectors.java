@@ -1,21 +1,21 @@
-package de.proto4j.annotation.validation; //@date 25.01.2022
+package de.proto4j.annotation.selection; //@date 25.01.2022
 
 
 import java.lang.reflect.AnnotatedElement;
 import java.util.Hashtable;
 import java.util.Map;
 
-public class Validators {
+public class Selectors {
 
-    public static final Validators SYSTEM_VALIDATORS = new Validators();
+    public static final Selectors SYSTEM_SELECTORS = new Selectors();
 
-    private final Map<Class<? extends BaseValidator>, Object> instance_map = new Hashtable<>();
+    private final Map<Class<? extends Selector>, Object> instance_map = new Hashtable<>();
 
-    private Validators() {}
+    private Selectors()                           {}
 
-    public static Validators getSystemValidators() { return SYSTEM_VALIDATORS; }
+    public static Selectors getSystemSelectors() { return SYSTEM_SELECTORS; }
 
-    public static Validators newInstance() { return new Validators(); }
+    public static Selectors newInstance()         { return new Selectors(); }
 
     public boolean contains(Class<?> c) {
         if (c != null) {
@@ -31,36 +31,36 @@ public class Validators {
         return null;
     }
 
-    public Object get(Validator v) {
+    public Object get(Selection v) {
         if (v != null) {
-            Class<? extends BaseValidator> c = v.validatorType();
+            Class<? extends Selector> c = v.selectorType();
             return get(c);
         }
         return null;
     }
 
     public Object get(AnnotatedElement e) {
-        if (e != null && e.isAnnotationPresent(Validator.class)) {
-            return get(e.getDeclaredAnnotation(Validator.class));
+        if (e != null && e.isAnnotationPresent(Selection.class)) {
+            return get(e.getDeclaredAnnotation(Selection.class));
         }
         return null;
     }
 
-    public boolean add(Validator v) {
+    public boolean add(Selection v) {
         if (v != null) {
-            return add(v.validatorType());
+            return add(v.selectorType());
         }
         return false;
     }
 
-    public boolean add(Class<? extends BaseValidator> c) {
+    public boolean add(Class<? extends Selector> c) {
         if (c != null) try {
             return add(c, c.getDeclaredConstructor().newInstance());
         } catch (ReflectiveOperationException ex) { /**/ }
         return false;
     }
 
-    private boolean add(Class<? extends BaseValidator> c, Object instance) {
+    private boolean add(Class<? extends Selector> c, Object instance) {
         if (c != null && instance != null && !instance_map.containsKey(c)) {
             instance_map.put(c, instance);
             return true;

@@ -4,13 +4,13 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
-import de.proto4j.annotation.concurrent.CommandExecutor;
+import de.proto4j.annotation.server.threding.CommandExecutor;
 import de.proto4j.annotation.http.Http;
 import de.proto4j.annotation.http.Https;
 import de.proto4j.annotation.http.WebServer;
 import de.proto4j.annotation.http.requests.RequestController;
 import de.proto4j.annotation.http.requests.RequestListener;
-import de.proto4j.annotation.http.requests.ResponseBody;
+import de.proto4j.annotation.server.requests.ResponseBody;
 import de.proto4j.annotation.http.requests.ResponseType;
 import de.proto4j.internal.model.Reflections;
 import de.proto4j.internal.model.bean.BeanManager;
@@ -165,7 +165,7 @@ public final class WebServlet {
 
                 if (response != null && m.isAnnotationPresent(ResponseBody.class)) {
 
-                    ResponseType type = m.getDeclaredAnnotation(ResponseBody.class).type();
+                    ResponseType type = m.getDeclaredAnnotation(ResponseBody.class).value();
                     if (response instanceof String) {
                         stringHandler.handle((String) response, exchange, type);
                     } else if (response instanceof ResponseEntity) {

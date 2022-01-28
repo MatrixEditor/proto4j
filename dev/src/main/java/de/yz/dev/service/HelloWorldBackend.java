@@ -3,8 +3,8 @@ package de.yz.dev.service; //@date 23.01.2022
 import com.sun.net.httpserver.HttpExchange;
 import de.proto4j.annotation.http.requests.RequestController;
 import de.proto4j.annotation.http.requests.RequestListener;
-import de.proto4j.annotation.http.requests.RequestParam;
-import de.proto4j.annotation.http.requests.ResponseBody;
+import de.proto4j.annotation.server.requests.RequestParam;
+import de.proto4j.annotation.server.requests.ResponseBody;
 
 import java.io.IOException;
 import java.util.List;

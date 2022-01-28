@@ -1,6 +1,6 @@
 package de.yz.dev; //@date 23.01.2022
 
-import de.proto4j.annotation.concurrent.AllowAutoConfiguration;
+import de.proto4j.internal.AllowAutoConfiguration;
 import de.proto4j.annotation.http.Http;
 import de.proto4j.annotation.http.WebServer;
 import de.proto4j.internal.RootPackage;
