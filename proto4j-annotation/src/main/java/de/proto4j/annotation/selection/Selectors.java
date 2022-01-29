@@ -1,6 +1,8 @@
 package de.proto4j.annotation.selection; //@date 25.01.2022
 
 
+import de.proto4j.annotation.server.requests.RequestHandler;
+
 import java.lang.reflect.AnnotatedElement;
 import java.util.Hashtable;
 import java.util.Map;
@@ -31,7 +33,7 @@ public class Selectors {
         return null;
     }
 
-    public Object get(Selection v) {
+    public Object get(RequestHandler v) {
         if (v != null) {
             Class<? extends Selector> c = v.selectorType();
             return get(c);
@@ -40,13 +42,13 @@ public class Selectors {
     }
 
     public Object get(AnnotatedElement e) {
-        if (e != null && e.isAnnotationPresent(Selection.class)) {
-            return get(e.getDeclaredAnnotation(Selection.class));
+        if (e != null && e.isAnnotationPresent(RequestHandler.class)) {
+            return get(e.getDeclaredAnnotation(RequestHandler.class));
         }
         return null;
     }
 
-    public boolean add(Selection v) {
+    public boolean add(RequestHandler v) {
         if (v != null) {
             return add(v.selectorType());
         }

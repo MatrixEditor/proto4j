@@ -6,5 +6,4 @@ import java.lang.annotation.*;
 @Target({ElementType.METHOD})
 @Documented
 public @interface Context {
-    String[] value();
 }

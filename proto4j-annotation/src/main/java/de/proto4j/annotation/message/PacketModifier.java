@@ -10,12 +10,12 @@ public class PacketModifier {
 
     private PacketModifier() {}
 
-    public static boolean isPacket(Class<?> c) {
+    public static boolean isMessage(Class<?> c) {
         return c != null && c.isAnnotationPresent(Message.class);
     }
 
-    public static boolean isPacket(Object o) {
-        return isPacket(o.getClass());
+    public static boolean isMessage(Object o) {
+        return isMessage(o.getClass());
     }
 
     public static boolean hasAllArgsConstructor(Class<?> x) {
@@ -54,6 +54,10 @@ public class PacketModifier {
         return e != null && e.isAnnotationPresent(AnyType.class) && !e.isAnnotationPresent(Deprecated.class);
     }
 
+    public static boolean hasTypeSpec(AnnotatedElement e) {
+        return e != null && e.isAnnotationPresent(TypeSpec.class) && !e.isAnnotationPresent(Deprecated.class);
+    }
+
     private static boolean checkConstructor(Class<?> c, Class<? extends Annotation> a) {
         if (c != null) {
             for (Constructor<?> con : c.getDeclaredConstructors()) {
@@ -65,7 +69,7 @@ public class PacketModifier {
 
     public static void setComponent(Object packet, int ord, Object o) throws IllegalAccessException {
         if (packet != null && ord > 0) {
-            if (PacketModifier.isPacket(packet)) {
+            if (PacketModifier.isMessage(packet)) {
                 for (Field f : packet.getClass().getDeclaredFields()) {
                     if (Modifier.isStatic(f.getModifiers())) continue;
 

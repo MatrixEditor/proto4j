@@ -38,10 +38,10 @@ public class Reflections {
             Set<Class<?>> classSet = new HashSet<>();
             Set<Class<?>> s        = classScanner.getAllClassesOfPackage(_package);
 
-            s.forEach(x -> {if (PacketModifier.isPacket(x)) classSet.add(x);});
+            s.forEach(x -> {if (PacketModifier.isMessage(x)) classSet.add(x);});
             return classSet;
         } else {
-            return cachedRuntimeClasses.stream().filter(PacketModifier::isPacket)
+            return cachedRuntimeClasses.stream().filter(PacketModifier::isMessage)
                                        .collect(Collectors.toCollection(HashSet::new));
         }
 
@@ -81,9 +81,11 @@ public class Reflections {
         private int pointer = 0;
 
         public PackageGeneratorImpl(Class<?> main) {
-            if (main.isAnnotationPresent(RootPackage.class))
-                addIfAbsent(main.getDeclaredAnnotation(RootPackage.class).path());
-            else {
+            if (main.isAnnotationPresent(RootPackage.class)) {
+                String p = main.getDeclaredAnnotation(RootPackage.class).path();
+                if (p.length() == 0) p = main.getPackageName();
+                addIfAbsent(p);
+            } else {
                 List<String> names = generateNames(main);
 
                 packageInfoLookup(ClassLoader.getSystemClassLoader(), names);

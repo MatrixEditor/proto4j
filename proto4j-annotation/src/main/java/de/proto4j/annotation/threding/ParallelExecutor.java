@@ -1,4 +1,4 @@
-package de.proto4j.annotation.server.threding;//@date 27.01.2022
+package de.proto4j.annotation.threding;//@date 27.01.2022
 
 import java.util.concurrent.ThreadFactory;
 

@@ -4,7 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
-import de.proto4j.annotation.server.threding.CommandExecutor;
+import de.proto4j.annotation.threding.CommandExecutor;
 import de.proto4j.annotation.http.Http;
 import de.proto4j.annotation.http.Https;
 import de.proto4j.annotation.http.WebServer;
@@ -99,7 +99,7 @@ public final class WebServlet {
     private static HttpServerContext makeContext(HttpServer s, Class<?> mainClass, Class<?> e, Set<String> routes,
                                                  UnmodifiableBeanManager manager) {
 
-        return null;
+        return new HttpServerContextImpl(manager, s, routes, e, mainClass);
     }
 
     private static void log(ErrorMessage em, Object... format) {
@@ -185,7 +185,8 @@ public final class WebServlet {
         }
 
         private boolean isFirstParameter(Parameter[] parameters) {
-            return (parameters[0].getType().isAssignableFrom(HttpExchange.class));
+            //X.class.isAssignableFrom(Y.class) <-> X.isSuperClassOf(Y.class)
+            return (HttpExchange.class.isAssignableFrom(parameters[0].getType()));
         }
 
         private Object trycatch(Method m) {
@@ -219,11 +220,10 @@ public final class WebServlet {
         private final BeanManager manager;
         private final HttpServer server;
         private final Set<String> routes;
-        private final Class<? extends Executor> executor;
+        private final Class<?> executor;
         private final Class<?> main;
 
-        private HttpServerContextImpl(BeanManager manager, HttpServer server, Set<String> routes, Class<?
-                extends Executor> executor, Class<?> main) {
+        private HttpServerContextImpl(BeanManager manager, HttpServer server, Set<String> routes, Class<?> executor, Class<?> main) {
             this.manager  = manager;
             this.server   = server;
             this.routes   = routes;
@@ -232,7 +232,7 @@ public final class WebServlet {
         }
 
         @Override
-        public Class<? extends Executor> getExecutorType() {
+        public Class<?> getExecutorType() {
             return executor;
         }
 

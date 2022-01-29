@@ -1,20 +1,37 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 public class Proto4jReader extends InputStream {
 
     public static final int BUF_SIZE = 8 * 1024;
-    private SocketChannel channel;
-    private ByteBuffer    buf;
-    private byte[] one;
+
+    private final Set<Class<?>> readable = new HashSet<>();
+
+    private final SocketChannel channel;
+    private final ByteBuffer    buf;
+    private final byte[]        one;
+
     private boolean reset;
     private boolean closed = false, eof = false;
 
-    public Proto4jReader(SocketChannel chan) {
+    public Proto4jReader(SocketChannel chan, Collection<Class<?>> readableClasses) {
         if (chan == null) throw new NullPointerException();
         this.channel = chan;
         this.buf     = ByteBuffer.allocate(BUF_SIZE);
@@ -22,6 +39,30 @@ public class Proto4jReader extends InputStream {
 
         one    = new byte[1];
         closed = reset = false;
+
+        readable.addAll(readableClasses);
+    }
+
+    public synchronized Object readMessage() throws IOException {
+        if (closed) throw new IOException("stream is closed");
+        ByteBuffer buffer = ByteBuffer.allocate(2048);
+        int c;
+        do {
+            c = read();
+            buffer.put((byte) c);
+        } while (c != -1);
+        try {
+            Cipher cipher = Cipher.getInstance(Proto4jWriter.SHARED_CIPHER);
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Proto4jWriter.SHARED_KEY, "AES"));
+
+            byte[] decrypted = cipher.doFinal(buffer.array());
+            return IOUtil.convert(decrypted, readable);
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
+            //log
+        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -96,5 +137,9 @@ public class Proto4jReader extends InputStream {
         if (closed) return;
         reset = true;
 
+    }
+
+    public Set<Class<?>> getReadable() {
+        return readable;
     }
 }

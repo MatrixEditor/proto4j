@@ -10,14 +10,14 @@ import java.util.concurrent.Executor;
 
 public interface HttpServerContext {
 
-    Class<? extends Executor> getExecutorType();
+    Class<?> getExecutorType();
 
     Class<?> getMainClass();
 
     @UnsafeOperation
     HttpServer getServer();
 
-    @Info(text = "UnmodifiableBeanManager")
+    @Info("UnmodifiableBeanManager")
     BeanManager getBeans();
 
     Set<String> getWebRoutes();

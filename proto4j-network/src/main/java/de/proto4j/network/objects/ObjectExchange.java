@@ -24,4 +24,6 @@ public abstract class ObjectExchange {
 
     public abstract ObjectContext<?> getContext();
 
+    public abstract Object getMessage();
+
 }

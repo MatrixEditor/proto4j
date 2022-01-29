@@ -1,9 +1,11 @@
 package de.proto4j.network.objects.provider; //@date 28.01.2022
 
+import de.proto4j.annotation.selection.Selector;
 import de.proto4j.network.objects.ObjectContext;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -16,13 +18,13 @@ class ObjectServerImpl extends ObjectServer {
     }
 
     @Override
-    public void setExecutor(Executor executor) {
-        server.setExecutor(executor);
+    public Executor getExecutor() {
+        return server.getExecutor();
     }
 
     @Override
-    public Executor getExecutor() {
-        return server.getExecutor();
+    public void setExecutor(Executor executor) {
+        server.setExecutor(executor);
     }
 
     @Override
@@ -51,13 +53,13 @@ class ObjectServerImpl extends ObjectServer {
     }
 
     @Override
-    public ObjectContext<?> createContext(Object mapping, ObjectContext.Handler handler) {
+    public ObjectContext<? extends Selector> createContext(Class<? extends Selector> mapping,
+                                                           ObjectContext.Handler handler) {
         return server.createContext(mapping, handler);
     }
 
-    @Override
-    public ObjectContext<?> createContext(Object mapping) {
-        return server.createContext(mapping);
+    public ObjectContext<? extends Selector> createContext(Selector s, ObjectContext.Handler handler) {
+        return server.createContext(s, handler);
     }
 
     @Override
@@ -73,5 +75,10 @@ class ObjectServerImpl extends ObjectServer {
     @Override
     public InetSocketAddress getAddress() {
         return server.getAddress();
+    }
+
+    @Override
+    public List<Class<?>> getMessageTypes() {
+        return server.getReadableMessages();
     }
 }

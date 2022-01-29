@@ -1,4 +1,4 @@
-package de.proto4j.annotation.server.threding;//@date 27.01.2022
+package de.proto4j.annotation.threding;//@date 27.01.2022
 
 import de.proto4j.annotation.documentation.Info;
 
@@ -12,6 +12,6 @@ import java.util.concurrent.Executor;
 @Target(ElementType.METHOD)
 public @interface SupplyParallel {
 
-    @Info(text = "Executor.class indicates that Executors.newSingleThreadExecutor() is used")
+    @Info("Executor.class indicates that Executors.newSingleThreadExecutor() is used")
     Class<? extends Executor> value() default Executor.class;
 }
