@@ -71,11 +71,6 @@ class ObjectClientImpl extends ObjectClient {
     }
 
     @Override
-    public Map<SocketChannel, ObjectConnection> getConnections() {
-        return client.getConnections();
-    }
-
-    @Override
     public List<String> getConfiguration() {
         return client.getConfiguration();
     }

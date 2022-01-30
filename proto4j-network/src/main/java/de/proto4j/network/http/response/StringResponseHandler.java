@@ -1,7 +1,7 @@
 package de.proto4j.network.http.response; //@date 26.01.2022
 
 import com.sun.net.httpserver.HttpExchange;
-import de.proto4j.annotation.http.requests.ResponseType;
+import de.proto4j.annotation.http.requests.HttpResponseType;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,7 +9,7 @@ import java.io.OutputStream;
 public class StringResponseHandler implements ResponseInvocationHandler<String> {
 
     @Override
-    public void handle(String s, HttpExchange exchange, ResponseType responseType) {
+    public void handle(String s, HttpExchange exchange, HttpResponseType responseType) {
         if (s != null && s.length() != 0 && exchange != null) {
             try (OutputStream os = exchange.getResponseBody()) {
                 exchange.sendResponseHeaders(200, s.length());

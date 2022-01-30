@@ -3,15 +3,14 @@ package de.proto4j.network.http; //@date 25.01.2022
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsServer;
-import de.proto4j.annotation.threding.CommandExecutor;
 import de.proto4j.annotation.http.Http;
-import de.proto4j.annotation.http.Https;
 import de.proto4j.annotation.http.WebServer;
-import de.proto4j.annotation.http.requests.RequestController;
-import de.proto4j.annotation.http.requests.RequestListener;
+import de.proto4j.annotation.http.requests.HttpRequestController;
+import de.proto4j.annotation.http.requests.HttpRequestListener;
+import de.proto4j.annotation.http.requests.HttpResponseBody;
+import de.proto4j.annotation.http.requests.HttpResponseType;
 import de.proto4j.annotation.server.requests.ResponseBody;
-import de.proto4j.annotation.http.requests.ResponseType;
+import de.proto4j.annotation.threding.CommandExecutor;
 import de.proto4j.internal.model.Reflections;
 import de.proto4j.internal.model.bean.BeanManager;
 import de.proto4j.internal.model.bean.MapBeanManager;
@@ -37,40 +36,24 @@ import java.util.concurrent.Executor;
 public final class WebServlet {
 
     public static HttpServerContext runHttpServer(Class<?> mainClass) throws IOException {
-        return runHttpServer(mainClass, false);
-    }
-
-    public static HttpServerContext runHttpsServer(Class<?> mainClass) throws IOException {
-        return runHttpsServer(mainClass);
-    }
-
-    private static HttpServerContext runHttpServer(Class<?> mainClass, boolean https) throws IOException {
         if (mainClass != null && mainClass.isAnnotationPresent(WebServer.class)) {
-            if (!https) {
-                if (mainClass.isAnnotationPresent(Https.class)) {
-                    log(ErrorMessage.HTTP_ON_HTTPS, mainClass.getSimpleName());
-                }
-
-                if (!mainClass.isAnnotationPresent(Http.class)) {
-                    log(ErrorMessage.HTTP_NOT_DEFINED, mainClass.getSimpleName());
-                }
+            if (!mainClass.isAnnotationPresent(Http.class)) {
+                log(ErrorMessage.HTTP_NOT_DEFINED, mainClass.getSimpleName());
             }
 
             WebServer ws = mainClass.getDeclaredAnnotation(WebServer.class);
-            HttpServer server = https
-                    ? HttpsServer.create(new InetSocketAddress(ws.port()), 0)
-                    : HttpServer.create(new InetSocketAddress(ws.port()), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress(ws.port()), 0);
 
             BeanManager   manager = new MapBeanManager();
             Set<Class<?>> classes = Reflections.getClassesFromMain(mainClass);
 
             for (Class<?> controller : Reflections.findByAnnotationAsSet(classes, c0 -> {
-                return c0.isAnnotationPresent(RequestController.class);
+                return c0.isAnnotationPresent(HttpRequestController.class);
             })) {
-                manager.mapIfAbsent(controller, RequestController.class);
+                manager.mapIfAbsent(controller, HttpRequestController.class);
             }
 
-            Map<String, RouteCache> webRoutes = createRoutes(manager.findAll(RequestController.class));
+            Map<String, RouteCache> webRoutes = createRoutes(manager.findAll(HttpRequestController.class));
             webRoutes.forEach((s, rc) -> server.createContext(s, new ServerInvocationHandler(rc)));
 
             Object executor = null;
@@ -88,10 +71,8 @@ public final class WebServlet {
                 server.start();
             }
 
-            HttpServerContext context = makeContext(server, mainClass, executor != null ? executor.getClass() : null,
-                                                    webRoutes.keySet(), UnmodifiableBeanManager.of(manager));
-
-            return context;
+            return makeContext(server, mainClass, executor != null ? executor.getClass() : null,
+                               webRoutes.keySet(), UnmodifiableBeanManager.of(manager));
         }
         return null;
     }
@@ -111,14 +92,14 @@ public final class WebServlet {
         if (beanList.isEmpty()) return routes;
 
         beanList.iterator().forEachRemaining(c -> {
-            String baseMapping = c.getMappedClass().getDeclaredAnnotation(RequestController.class).mapping();
+            String baseMapping = c.getMappedClass().getDeclaredAnnotation(HttpRequestController.class).mapping();
             if (baseMapping.endsWith("/")) baseMapping = baseMapping.substring(baseMapping.length() - 1);
 
             for (Method m : c.getMappedClass().getDeclaredMethods()) {
                 if (Modifier.isStatic(m.getModifiers())) continue;
 
-                if (m.isAnnotationPresent(RequestListener.class)) {
-                    String path = m.getDeclaredAnnotation(RequestListener.class).path();
+                if (m.isAnnotationPresent(HttpRequestListener.class)) {
+                    String path = m.getDeclaredAnnotation(HttpRequestListener.class).path();
                     if (path.length() == 0 || path.equals("/")) path = baseMapping;
                     else path = baseMapping + "/" + path;
 
@@ -163,9 +144,9 @@ public final class WebServlet {
                     }
                 }
 
-                if (response != null && m.isAnnotationPresent(ResponseBody.class)) {
+                if (response != null && m.isAnnotationPresent(HttpResponseBody.class)) {
 
-                    ResponseType type = m.getDeclaredAnnotation(ResponseBody.class).value();
+                    HttpResponseType type = m.getDeclaredAnnotation(HttpResponseBody.class).value();
                     if (response instanceof String) {
                         stringHandler.handle((String) response, exchange, type);
                     } else if (response instanceof ResponseEntity) {
@@ -218,12 +199,13 @@ public final class WebServlet {
     private static class HttpServerContextImpl implements HttpServerContext {
 
         private final BeanManager manager;
-        private final HttpServer server;
+        private final HttpServer  server;
         private final Set<String> routes;
-        private final Class<?> executor;
-        private final Class<?> main;
+        private final Class<?>    executor;
+        private final Class<?>    main;
 
-        private HttpServerContextImpl(BeanManager manager, HttpServer server, Set<String> routes, Class<?> executor, Class<?> main) {
+        private HttpServerContextImpl(BeanManager manager, HttpServer server, Set<String> routes, Class<?> executor,
+                                      Class<?> main) {
             this.manager  = manager;
             this.server   = server;
             this.routes   = routes;

@@ -121,7 +121,7 @@ public final class IOUtil {
         MessageDesc desc = from(rep);
 
         try {
-            String[] h = desc.getHeader().split("::");
+            String[] h = desc.getHeader().split("[:][:]");
 
             // This prevents the system from loading untrusted data simply by checking
             // if the class-simpleName is contained in the name-set

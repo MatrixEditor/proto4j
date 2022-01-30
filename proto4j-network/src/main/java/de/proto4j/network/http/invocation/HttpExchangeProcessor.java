@@ -1,7 +1,7 @@
 package de.proto4j.network.http.invocation; //@date 25.01.2022
 
 import com.sun.net.httpserver.HttpExchange;
-import de.proto4j.annotation.server.requests.RequestParam;
+import de.proto4j.annotation.http.requests.RequestParam;
 
 import java.lang.reflect.Parameter;
 

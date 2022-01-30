@@ -44,7 +44,5 @@ public abstract class ObjectClient {
 
     public abstract void connectTo(SocketAddress remote);
 
-    public abstract Map<SocketChannel, ObjectConnection> getConnections();
-
     protected abstract List<String> getConfiguration();
 }

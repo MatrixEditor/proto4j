@@ -51,11 +51,6 @@ class ObjectServerImpl extends ObjectServer {
     }
 
     @Override
-    public Map<SocketChannel, ObjectConnection> getConnections() {
-        return server.getAllConnections();
-    }
-
-    @Override
     public void stop(int delay) {
         server.stop(delay);
     }

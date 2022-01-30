@@ -31,8 +31,8 @@ class ServerImpl {
     private final Object       connectionLock = new Object();
     private final ObjectServer wrapper;
 
-    private final InetSocketAddress     address;
-    private final ServerSocketChannel   ssChan;
+    private final InetSocketAddress                    address;
+    private final ServerSocketChannel                  ssChan;
     private final Map<SocketChannel, ObjectConnection> allConnections;
 
     private final Selectors  selectors;
@@ -225,6 +225,9 @@ class ServerImpl {
                     oc.setChannel(chan);
                     allConnections.put(chan, oc);
 
+                    LOGGER.info(PrintColor.DARK_GREEN,
+                                LogMessage.of("new connection from (%s)", ((InetSocketAddress) chan.getRemoteAddress())
+                                        .getAddress().getHostAddress()));
                     handle(chan, oc);
                 }
             } catch (IOException ioe) {

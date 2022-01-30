@@ -1,7 +1,7 @@
 package de.proto4j.network.http.response; //@date 26.01.2022
 
 import com.sun.net.httpserver.HttpExchange;
-import de.proto4j.annotation.http.requests.ResponseType;
+import de.proto4j.annotation.http.requests.HttpResponseType;
 import de.proto4j.network.http.ResponseEntity;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ public class EntityResponseHandler implements ResponseInvocationHandler<Response
     //XmlHandler
 
     @Override
-    public void handle(ResponseEntity<?> responseEntity, HttpExchange exchange, ResponseType responseType) {
+    public void handle(ResponseEntity<?> responseEntity, HttpExchange exchange, HttpResponseType responseType) {
         if (responseEntity != null && exchange != null && responseType != null) {
             if (responseEntity.getResponse() != null) {
                 switch (responseType) {

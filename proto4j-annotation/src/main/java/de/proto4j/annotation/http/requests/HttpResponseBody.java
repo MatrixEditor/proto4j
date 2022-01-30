@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface RequestListener {
-    String path();
+public @interface HttpResponseBody {
+    HttpResponseType value() default HttpResponseType.PLAIN_RESPONSE;
 }

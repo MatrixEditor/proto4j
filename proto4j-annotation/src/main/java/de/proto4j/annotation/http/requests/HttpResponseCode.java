@@ -4,8 +4,8 @@ import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@Repeatable(ResponseCode.ResponseCodes.class)
-public @interface ResponseCode {
+@Repeatable(HttpResponseCode.ResponseCodes.class)
+public @interface HttpResponseCode {
     int code();
     String description() default "";
 
@@ -13,6 +13,6 @@ public @interface ResponseCode {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     public @interface ResponseCodes {
-        ResponseCode[] value() default {};
+        HttpResponseCode[] value() default {};
     }
 }
