@@ -10,8 +10,6 @@ public class ObjectConnection {
 
     private ObjectContext<?> context;
 
-    private InputStream i;
-
     private InputStream  raw;
     private OutputStream out; //raw
 
@@ -23,9 +21,8 @@ public class ObjectConnection {
 
     private boolean closed = false;
 
-    public void setParameters(InputStream in, OutputStream rawOut, SocketChannel c, InputStream rawIn,
+    public void setParameters(OutputStream rawOut, SocketChannel c, InputStream rawIn,
                               ObjectContext<?> ctx) {
-        this.i = in;
         this.chan = c;
         this.raw = rawIn;
         this.out = rawOut;
@@ -62,10 +59,10 @@ public class ObjectConnection {
     }
 
     public InputStream getInputStream() {
-        return i;
+        return raw;
     }
 
-    public OutputStream getRawOutputStream() {
+    public OutputStream getOutputStream() {
         return out;
     }
 
@@ -79,5 +76,9 @@ public class ObjectConnection {
 
     public void setRawOutput(OutputStream out) {
         this.out = out;
+    }
+
+    public void setContext(ObjectContext<?> context) {
+        this.context = context;
     }
 }

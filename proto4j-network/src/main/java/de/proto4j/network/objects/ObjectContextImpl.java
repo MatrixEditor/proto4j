@@ -1,14 +1,15 @@
-package de.proto4j.network.objects.provider; //@date 28.01.2022
+package de.proto4j.network.objects; //@date 28.01.2022
 
 import de.proto4j.network.objects.ObjectAuthenticator;
 import de.proto4j.network.objects.ObjectContext;
+import de.proto4j.network.objects.client.ObjectClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
-class ObjectContextImpl<E> implements ObjectContext<E> {
+public class ObjectContextImpl<E> implements ObjectContext<E> {
 
-    private final ObjectServer server;
+    private final ObjectClient        client;
     private final Map<String, Object> conf = new HashMap<>();
 
     private final E mapping;
@@ -17,9 +18,9 @@ class ObjectContextImpl<E> implements ObjectContext<E> {
 
     private Handler handler;
 
-    public ObjectContextImpl(E mapping, Handler handler, ObjectServer server) {
-        this.server = server;
-        if (mapping == null || handler == null || server == null) {
+    public ObjectContextImpl(E mapping, Handler handler, ObjectClient client) {
+        this.client = client;
+        if (mapping == null || handler == null || client == null) {
             throw new NullPointerException("Mapping, Handler or Server == null");
         }
         this.mapping = mapping;
@@ -47,17 +48,17 @@ class ObjectContextImpl<E> implements ObjectContext<E> {
         return authenticator;
     }
 
+    public void setAuthenticator(ObjectAuthenticator authenticator) {
+        this.authenticator = authenticator;
+    }
+
     @Override
-    public ObjectServer getServer() {
-        return server;
+    public ObjectClient getClient() {
+        return client;
     }
 
     @Override
     public Map<String, Object> attributes() {
         return conf;
-    }
-
-    public void setAuthenticator(ObjectAuthenticator authenticator) {
-        this.authenticator = authenticator;
     }
 }

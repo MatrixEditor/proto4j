@@ -1,16 +1,11 @@
-package de.proto4j.network.objects.provider; //@date 28.01.2022
-
-import de.proto4j.network.objects.ObjectConnection;
-import de.proto4j.network.objects.ObjectContext;
-import de.proto4j.network.objects.ObjectExchange;
-import de.proto4j.network.objects.ObjectPrincipal;
+package de.proto4j.network.objects; //@date 28.01.2022
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-class ObjectExchangeImpl extends ObjectExchange {
+public class ObjectExchangeImpl extends ObjectExchange {
 
     private final ObjectConnection connection;
     private final Object           message;
@@ -25,6 +20,7 @@ class ObjectExchangeImpl extends ObjectExchange {
     public ObjectExchangeImpl(ObjectConnection connection, Object message) {
         this.connection = connection;
         this.message    = message;
+        setStreams(connection.getInputStream(), connection.getOutputStream());
     }
 
     @Override

@@ -11,7 +11,7 @@ import java.io.IOException;
 
 @Http
 @WebServer(port = 8080)
-@RootPackage(path = "de.yz.dev")
+@RootPackage(value = "de.yz.dev")
 @AllowAutoConfiguration
 public class SimpleJavaWebServer {
 

@@ -1,11 +1,14 @@
-package de.proto4j.network.objects.provider; //@date 28.01.2022
+package de.proto4j.network.objects.server; //@date 28.01.2022
 
 import de.proto4j.annotation.selection.Selector;
+import de.proto4j.network.objects.ObjectConnection;
 import de.proto4j.network.objects.ObjectContext;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -45,6 +48,11 @@ class ObjectServerImpl extends ObjectServer {
     @Override
     public void start() {
         server.start();
+    }
+
+    @Override
+    public Map<SocketChannel, ObjectConnection> getConnections() {
+        return server.getAllConnections();
     }
 
     @Override

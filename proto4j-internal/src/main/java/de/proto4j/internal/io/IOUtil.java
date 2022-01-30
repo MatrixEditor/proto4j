@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class IOUtil {
 
@@ -113,14 +114,22 @@ public final class IOUtil {
         if (decryptedData.length == 0)
             throw new IllegalArgumentException("data cannot be 0");
 
-        if (decryptedData.length % Proto4jWriter.SHARED_KEY.length != 0)
-          throw new IllegalArgumentException("data has to be a multiple of sharedKey.length");
+        //if (decryptedData.length % Proto4jWriter.SHARED_KEY.length != 0)
+          //throw new IllegalArgumentException("data has to be a multiple of sharedKey.length");
 
         String      rep  = new String(decryptedData);
         MessageDesc desc = from(rep);
 
         try {
-            Class<?> messageClass = Class.forName(desc.getHeader().split("::")[0]);
+            String[] h = desc.getHeader().split("::");
+
+            // This prevents the system from loading untrusted data simply by checking
+            // if the class-simpleName is contained in the name-set
+            Set<String> simpleNames = readable.stream().map(Class::getSimpleName).collect(Collectors.toSet());
+            if (!simpleNames.contains(h[1]))
+                throw new IllegalArgumentException("unknown message class: " + h[1]);
+
+            Class<?> messageClass = Class.forName(h[0]);
             if (!readable.contains(messageClass))
                 throw new IllegalArgumentException("unknown message class: " + messageClass.getSimpleName());
 

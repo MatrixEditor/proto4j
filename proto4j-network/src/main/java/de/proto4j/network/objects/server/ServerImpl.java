@@ -1,16 +1,20 @@
-package de.proto4j.network.objects.provider; //@date 28.01.2022
+package de.proto4j.network.objects.server; //@date 28.01.2022
 
 import de.proto4j.annotation.selection.Selector;
 import de.proto4j.annotation.selection.Selectors;
 import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
-import de.proto4j.network.objects.ObjectConnection;
-import de.proto4j.network.objects.ObjectContext;
-import de.proto4j.network.objects.ObjectExchange;
+import de.proto4j.internal.logger.LogMessage;
+import de.proto4j.internal.logger.Logger;
+import de.proto4j.internal.logger.PrintColor;
+import de.proto4j.internal.logger.PrintService;
+import de.proto4j.network.objects.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.SocketException;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.*;
@@ -19,15 +23,17 @@ import java.util.concurrent.ExecutorService;
 
 class ServerImpl {
 
+    private static final Logger LOGGER = PrintService.createLogger(ObjectServer.class);
+
     private final List<ObjectContext<? extends Selector>> contextList;
-    private final List<Class<?>> readableMessages;
+    private final List<Class<?>>                          readableMessages;
 
     private final Object       connectionLock = new Object();
     private final ObjectServer wrapper;
 
     private final InetSocketAddress     address;
     private final ServerSocketChannel   ssChan;
-    private final Set<ObjectConnection> allConnections;
+    private final Map<SocketChannel, ObjectConnection> allConnections;
 
     private final Selectors  selectors;
     private final Dispatcher dispatcher;
@@ -35,10 +41,10 @@ class ServerImpl {
     private ExecutorService threadPool;
     private Executor        executor;
 
-    private volatile boolean finished       = false;
-    private volatile boolean terminating    = false;
-    private          boolean bound          = false;
-    private          boolean started        = false;
+    private volatile boolean finished    = false;
+    private volatile boolean terminating = false;
+    private          boolean bound       = false;
+    private          boolean started     = false;
 
     private volatile long time;
 
@@ -52,13 +58,15 @@ class ServerImpl {
             ServerSocket socket = ssChan.socket();
             socket.bind(address, backlog);
             bound = true;
+
+            LOGGER.info(PrintColor.LIGHT_GREY, LogMessage.of("server created on port: %s", address.getPort()));
         }
 
-        allConnections = Collections.synchronizedSet(new HashSet<>());
-        time           = System.currentTimeMillis();
-        contextList    = new LinkedList<>();
-        dispatcher     = new Dispatcher();
-        selectors      = Selectors.newInstance();
+        allConnections   = Collections.synchronizedMap(new HashMap<>());
+        time             = System.currentTimeMillis();
+        contextList      = new LinkedList<>();
+        dispatcher       = new Dispatcher();
+        selectors        = Selectors.newInstance();
         readableMessages = new LinkedList<>();
     }
 
@@ -80,11 +88,14 @@ class ServerImpl {
         dispatcherThread = new Thread(null, dispatcher, "ObjectServer::Dispatcher", 0, false);
         started          = true;
         dispatcherThread.start();
+        LOGGER.info(PrintColor.DARK_GREEN, LogMessage.simpleMessage("Server started!"));
     }
 
     public void stop(int delay) {
         if (delay < 0) throw new IllegalArgumentException("negative delay parameter");
         terminating = true;
+        LOGGER.info(PrintColor.LIGHT_GREY, LogMessage.simpleMessage("Terminating server"));
+
         try {
             ssChan.close();
         } catch (IOException e) {/**/}
@@ -97,9 +108,7 @@ class ServerImpl {
         }
         finished = true;
         synchronized (connectionLock) {
-            for (ObjectConnection c : allConnections) {
-                c.close();
-            }
+            allConnections.forEach((s, c) -> c.close());
         }
         if (dispatcherThread != null) {
             try {
@@ -109,6 +118,7 @@ class ServerImpl {
                 //log exception
             }
         }
+        LOGGER.info(PrintColor.LIGHT_GREY, LogMessage.simpleMessage("Server stopped!"));
     }
 
     private void delay() {
@@ -197,6 +207,10 @@ class ServerImpl {
         return null;
     }
 
+    public Map<SocketChannel, ObjectConnection> getAllConnections() {
+        return allConnections;
+    }
+
     class Dispatcher implements Runnable {
 
         @Override
@@ -206,16 +220,20 @@ class ServerImpl {
 
                 SocketChannel chan = ssChan.accept();
                 if (chan != null) {
-                    chan.configureBlocking(true);
+                    chan.configureBlocking(false);
                     ObjectConnection oc = new ObjectConnection();
                     oc.setChannel(chan);
-                    allConnections.add(oc);
+                    allConnections.put(chan, oc);
 
                     handle(chan, oc);
                 }
             } catch (IOException ioe) {
-                // log
+                if (ioe instanceof AsynchronousCloseException) {
+                    break;
+                }
+                LOGGER.except(PrintColor.DARK_RED, ioe);
             }
+            stop(0);
         }
 
         private void handle(SocketChannel chan, ObjectConnection oc) {
@@ -229,7 +247,7 @@ class ServerImpl {
                     }
                 }
             } catch (Exception e) {
-                // log
+                LOGGER.except(PrintColor.DARK_RED, e);
             }
         }
     }
@@ -259,13 +277,22 @@ class ServerImpl {
                     //find context
                     context = findContext(message);
                     if (context != null) {
+                        connection.setContext(context);
+
                         ObjectExchange ex = new ObjectExchangeImpl(connection, message);
                         context.getHandler().handle(ex);
                     }
                 } catch (Exception ex) {
-                    // log
+                    if (ex instanceof SocketException) {
+                        LogMessage lm = LogMessage.of("%s by %s", ex.getMessage(),
+                                                      chan.socket().getLocalAddress().getHostName());
+                        LOGGER.except(PrintColor.DARK_RED, lm);
+                        break;
+                    }
+                    LOGGER.except(PrintColor.DARK_RED, ex);
                 }
             }
+
         }
     }
 }

@@ -10,7 +10,7 @@ import java.util.concurrent.ForkJoinPool;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface ThreadPooling {
-    Class<? extends ExecutorService> poolType() default ForkJoinPool.class;
+    Class<? extends ExecutorService> poolType() default DirectThreadPool.class;
 
     // -1 stands for default constructor with no parameters
     int parallelism() default -1;

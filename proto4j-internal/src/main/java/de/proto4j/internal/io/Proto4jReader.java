@@ -46,16 +46,15 @@ public class Proto4jReader extends InputStream {
     public synchronized Object readMessage() throws IOException {
         if (closed) throw new IOException("stream is closed");
         ByteBuffer buffer = ByteBuffer.allocate(2048);
-        int c;
-        do {
-            c = read();
-            buffer.put((byte) c);
-        } while (c != -1);
+
+        int len = read(buffer.array());
         try {
+            byte[] encrypted = new byte[len];
+            System.arraycopy(buffer.array(), 0, encrypted, 0, len);
             Cipher cipher = Cipher.getInstance(Proto4jWriter.SHARED_CIPHER);
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Proto4jWriter.SHARED_KEY, "AES"));
 
-            byte[] decrypted = cipher.doFinal(buffer.array());
+            byte[] decrypted = cipher.doFinal(encrypted);
             return IOUtil.convert(decrypted, readable);
         } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
             //log

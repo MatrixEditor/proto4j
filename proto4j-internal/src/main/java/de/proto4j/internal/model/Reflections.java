@@ -1,5 +1,6 @@
 package de.proto4j.internal.model; //@date 23.01.2022
 
+import de.proto4j.annotation.message.Message;
 import de.proto4j.annotation.message.PacketModifier;
 import de.proto4j.internal.RootPackage;
 
@@ -47,6 +48,26 @@ public class Reflections {
 
     }
 
+    public static void removeNonMessageClasses(Class<?> main, Set<Class<?>> beans) {
+        String[] main_names = main.getPackageName().split("[.]");
+
+        beans.removeIf(c -> {
+            if (!c.isAnnotationPresent(Message.class)) {
+                String[] package_name = c.getPackageName().split("[.]");
+                for (int i = 0; i < package_name.length; i++) {
+                    if (i == main_names.length) return false;
+
+                    if (package_name[i].equals(main_names[i])) {
+                        if (i + 1 == package_name.length) return false;
+                        continue;
+                    }
+                    break;
+                }
+                return true;
+            } else return false;
+        });
+    }
+
     public static Set<Class<?>> findRequestControllers(Collection<Class<?>> c) {
         return Collections.emptySet();//findByAnnotationAsSet(c, c0 -> c0.isAnnotationPresent(RequestController.class));
     }
@@ -82,13 +103,16 @@ public class Reflections {
 
         public PackageGeneratorImpl(Class<?> main) {
             if (main.isAnnotationPresent(RootPackage.class)) {
-                String p = main.getDeclaredAnnotation(RootPackage.class).path();
+                String p = main.getDeclaredAnnotation(RootPackage.class).value();
                 if (p.length() == 0) p = main.getPackageName();
                 addIfAbsent(p);
+                String s = p.substring(p.lastIndexOf('.'));
+                addIfAbsent(s);
             } else {
                 List<String> names = generateNames(main);
 
                 packageInfoLookup(ClassLoader.getSystemClassLoader(), names);
+                names.forEach(this::addIfAbsent);
                 if (package_names.isEmpty())
                     filterPackages(names);
             }
@@ -122,6 +146,7 @@ public class Reflections {
             Package[] packages = Package.getPackages();
             for (Package p : packages) {
                 String p_name = p.getName();
+
                 cleanup:
                 {
                     for (String n : names) {

@@ -4,5 +4,5 @@ import java.util.concurrent.ThreadFactory;
 
 public interface ParallelExecutor {
 
-    public void execute(ThreadFactory factory, Runnable command);
+    public void execute(Runnable command);
 }
