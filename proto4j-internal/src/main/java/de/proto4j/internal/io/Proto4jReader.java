@@ -1,5 +1,7 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
+import de.proto4j.internal.io.desc.DescProviderFactory;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -55,7 +57,7 @@ public class Proto4jReader extends InputStream {
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Proto4jWriter.SHARED_KEY, "AES"));
 
             byte[] decrypted = cipher.doFinal(encrypted);
-            return IOUtil.convert(decrypted, readable);
+            return DescProviderFactory.convert(decrypted, readable);
         } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
             //log
         } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {

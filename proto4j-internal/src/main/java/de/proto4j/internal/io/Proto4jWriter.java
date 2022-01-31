@@ -2,6 +2,7 @@ package de.proto4j.internal.io; //@date 28.01.2022
 
 import de.proto4j.annotation.documentation.Info;
 import de.proto4j.annotation.documentation.UnsafeOperation;
+import de.proto4j.internal.io.desc.DescProviderFactory;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -14,6 +15,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
+
+import static de.proto4j.internal.io.desc.DescProviderFactory.RF;
 
 public class Proto4jWriter extends OutputStream {
     private final SocketChannel channel;
@@ -44,11 +47,11 @@ public class Proto4jWriter extends OutputStream {
 
         if (message == null) throw new NullPointerException("cannot write null-object");
         try {
-            StringBuffer buf = IOUtil.allocate(message);
+            StringBuffer buf = DescProviderFactory.allocate(message);
             if (buf.capacity() % 16 != 0) {
                 int cap = buf.capacity();
                 while (cap % 16 != 0) {
-                    buf.append(IOUtil.RF);
+                    buf.append(RF);
                     cap++;
                 }
             }

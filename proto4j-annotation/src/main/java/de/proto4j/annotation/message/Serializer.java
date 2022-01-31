@@ -5,4 +5,6 @@ import java.io.IOException;
 public interface Serializer {
 
     String serialize(Object o) throws IOException;
+
+    Object read(String serialized) throws IOException;
 }
