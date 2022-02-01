@@ -4,6 +4,9 @@ import de.proto4j.annotation.message.Component;
 import de.proto4j.annotation.message.Message;
 import de.proto4j.annotation.message.PacketModifier;
 import de.proto4j.annotation.message.TypeSpec;
+import de.proto4j.internal.io.desc.mapping.ArrayMappings;
+import de.proto4j.internal.io.desc.mapping.CollectionMappings;
+import de.proto4j.internal.io.desc.mapping.PrimitiveMappings;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -13,7 +16,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static de.proto4j.internal.io.desc.FieldDesc.*;
-import static de.proto4j.internal.io.desc.FieldDesc.REPEATED_MODIFIER;
 
 public final class DescProviderFactory {
 
@@ -26,26 +28,20 @@ public final class DescProviderFactory {
     public static final String RF_REPLACEMENT        = "%r";
     public static final String DELIMITER_REPLACEMENT = "%M";
 
-    public static FieldDesc forType(Class<?> valueType) {
-        if (PrimitiveFieldDesc.primitiveTypes().contains(valueType))
-            return new PrimitiveFieldDesc();
-        else {
-            if (RepeatedFieldDesc.arrayTypes().contains(valueType)
-                    || RepeatedFieldDesc.collectionTypes().contains(valueType)) {
-                return new RepeatedFieldDesc();
-            }
-        }
-        throw new ProviderNotFoundException();
-    }
-
     /**
      * Creates a {@link StringBuffer} from a given message object. The structure
      * of this buffer is as follows:
      * <pre>
-     *     a.b.ClassName::ClassName\n
-     *     ord-[attributes]-type-len-VALUE-\r
-     *     ...
-     *     \n\r
+     *     a.b.ClassName::ClassName\nord-[attributes]-type-len-VALUE-\r...
+     * </pre>
+     * If a collection is stored with a generic type, the <i>type</i> is written
+     * with <code>CollectionType.getName()&PrimitiveType.getName()</code>, for
+     * instance:
+     * <pre>
+     *     CollectionType: java.util.LinkedList
+     *     PrimitiveType: java.lang.String
+     *
+     *     type = java.util.LinkedList&java.lang.String
      * </pre>
      *
      * @param message the message instance
@@ -95,6 +91,17 @@ public final class DescProviderFactory {
         }
         buf.append(desc.serialize());
         return buf;
+    }
+
+    public static FieldDesc forType(Class<?> valueType) {
+        if (PrimitiveMappings.contains(valueType))
+            return new PrimitiveFieldDesc();
+        else {
+            if (ArrayMappings.contains(valueType) || CollectionMappings.contains(valueType)) {
+                return new RepeatedFieldDesc();
+            }
+        }
+        throw new ProviderNotFoundException();
     }
 
     public static Object convert(byte[] decryptedData, Set<Class<?>> readable) throws IOException {
