@@ -3,8 +3,10 @@ package de.proto4j.network.objects.client; //@date 29.01.2022
 import de.proto4j.annotation.selection.Selector;
 import de.proto4j.network.objects.ObjectConnection;
 import de.proto4j.network.objects.ObjectContext;
+import de.proto4j.network.objects.SelectorContext;
 
 import java.io.IOException;
+import java.lang.reflect.Parameter;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.List;
@@ -20,13 +22,18 @@ class ObjectClientImpl extends ObjectClient {
     }
 
     @Override
-    public ObjectContext<? extends Selector> createContext(Selector selector, ObjectContext.Handler handler) {
+    public ObjectContext<SelectorContext> createContext(Parameter[] parameters, ObjectContext.Handler handler) {
+        return client.createContext(parameters, handler);
+    }
+
+    @Override
+    public ObjectContext<SelectorContext> createContext(Selector selector, ObjectContext.Handler handler) {
         return client.createContext(selector, handler);
     }
 
     @Override
-    public ObjectContext<? extends Selector> createContext(Class<? extends Selector> mapping,
-                                                           ObjectContext.Handler handler) {
+    public ObjectContext<SelectorContext> createContext(Class<? extends Selector> mapping,
+                                                        ObjectContext.Handler handler) {
         return client.createContext(mapping, handler);
     }
 

@@ -1,4 +1,4 @@
-package de.proto4j.annotation.message;//@date 29.01.2022
+package proto4j.serialization;//@date 29.01.2022
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

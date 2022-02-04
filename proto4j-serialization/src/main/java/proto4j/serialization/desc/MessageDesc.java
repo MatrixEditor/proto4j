@@ -1,17 +1,19 @@
-package de.proto4j.internal.io.desc; //@date 31.01.2022
+package proto4j.serialization.desc; //@date 31.01.2022
+
+import proto4j.DescProviderFactory;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import static de.proto4j.internal.io.desc.DescProviderFactory.LF;
-import static de.proto4j.internal.io.desc.DescProviderFactory.RF;
+import static proto4j.DescProviderFactory.LF;
+import static proto4j.DescProviderFactory.RF;
 
 public class MessageDesc implements ObjectDesc {
 
     private final List<FieldDesc> fields = new LinkedList<>();
-    private Class<?> messageClass;
+    private Class<?>              messageClass;
 
     public List<FieldDesc> getFields() {
         return fields;
@@ -62,14 +64,9 @@ public class MessageDesc implements ObjectDesc {
 
                     while (tF.hasMoreElements()) {
                         String tk = tF.nextToken();
-                        try {
-                            Class<?>  type = Class.forName(tk.split("[-]")[2].split("[&]")[0]);
-                            FieldDesc desc = DescProviderFactory.forType(type);
+                        FieldDesc desc = DescProviderFactory.forType(tk.split("[-]")[2]);
 
-                            getFields().add((FieldDesc) desc.read(tk));
-                        } catch (ClassNotFoundException e) {
-                            throw new IllegalCallerException();
-                        }
+                        getFields().add((FieldDesc) desc.read(tk));
                     }
                     break;
                 }

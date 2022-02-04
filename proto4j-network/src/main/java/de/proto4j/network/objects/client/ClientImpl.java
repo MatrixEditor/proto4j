@@ -4,9 +4,11 @@ import de.proto4j.annotation.selection.Selector;
 import de.proto4j.annotation.server.Configuration;
 import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
+import de.proto4j.internal.method.MethodLookup;
 import de.proto4j.network.objects.*;
 
 import java.io.IOException;
+import java.lang.reflect.Parameter;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
@@ -20,8 +22,8 @@ class ClientImpl {
 
     private final Map<SocketChannel, ObjectConnection> connections = new HashMap<>();
 
-    private final List<Class<?>>                          messageTypes = new LinkedList<>();
-    private final List<ObjectContext<? extends Selector>> contexts     = new LinkedList<>();
+    private final List<Class<?>>                       messageTypes = new LinkedList<>();
+    private final List<ObjectContext<SelectorContext>> contexts     = new LinkedList<>();
 
     private final ObjectClient wrapper;
     private final List<String> configuration;
@@ -97,30 +99,43 @@ class ClientImpl {
         }
     }
 
-    public ObjectContext<? extends Selector> createContext(Selector s, ObjectContext.Handler handler) {
-        if (s == null || handler == null) {
+    public synchronized ObjectContext<SelectorContext> createContext(Parameter[] parameters, ObjectContext.Handler handler) {
+        if (parameters == null || handler == null) {
             throw new NullPointerException("Mapping or Handler == null");
         }
-        ObjectContextImpl<? extends Selector> ctx = new ObjectContextImpl<>(s, handler, wrapper);
+
+        ObjectContextImpl<SelectorContext> ctx = new ObjectContextImpl<>(SelectorContext.ofMethod(parameters),
+                                                                         handler, wrapper);
         contexts.add(ctx);
         return ctx;
     }
 
-    public synchronized ObjectContext<? extends Selector> createContext(Class<? extends Selector> o,
-                                                                        ObjectContext.Handler handler) {
+    public synchronized ObjectContext<SelectorContext> createContext(Class<? extends Selector> o,
+                                                                     ObjectContext.Handler handler) {
         if (o == null || handler == null) {
             throw new NullPointerException("Mapping or Handler == null");
         }
         try {
             Selector mapping = o.getDeclaredConstructor().newInstance();
 
-            ObjectContextImpl<? extends Selector> ctx = new ObjectContextImpl<>(mapping, handler, wrapper);
+            ObjectContextImpl<SelectorContext> ctx = new ObjectContextImpl<>(SelectorContext.ofSelector(mapping),
+                                                                             handler, wrapper);
             contexts.add(ctx);
             return ctx;
         } catch (ReflectiveOperationException e) {
             // log handler not added
         }
         return null;
+    }
+
+    public synchronized ObjectContext<SelectorContext> createContext(Selector mapping, ObjectContext.Handler handler) {
+        if (mapping == null || handler == null) {
+            throw new NullPointerException("Mapping or Handler == null");
+        }
+        ObjectContextImpl<SelectorContext> ctx = new ObjectContextImpl<>(SelectorContext.ofSelector(mapping),
+                                                                         handler, wrapper);
+        contexts.add(ctx);
+        return ctx;
     }
 
     public synchronized void removeContext(Object mapping) {
@@ -146,12 +161,19 @@ class ClientImpl {
         } catch (InterruptedException e) {/**/}
     }
 
-    private ObjectContext<? extends Selector> findBySelector(Object message) {
-        for (ObjectContext<? extends Selector> oc : contexts) {
+    private ObjectContext<SelectorContext> findBySelector(Object message) {
+        for (ObjectContext<SelectorContext> oc : contexts) {
             if (oc != null) {
-                if (oc.getMapping().canSelect(message)) {
-                    return oc;
+                if (oc.getMapping().hasDefaultSelection()) {
+                    if (MethodLookup.select(message, oc.getMapping().getParameters())) {
+                        return oc;
+                    }
+                } else {
+                    if (oc.getMapping().getSelector().canSelect(message)) {
+                        return oc;
+                    }
                 }
+
             }
         }
         return null;

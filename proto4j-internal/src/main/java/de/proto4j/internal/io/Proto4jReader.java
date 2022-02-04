@@ -1,6 +1,6 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
-import de.proto4j.internal.io.desc.DescProviderFactory;
+import proto4j.DescProviderFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -9,16 +9,13 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 public class Proto4jReader extends InputStream {
 

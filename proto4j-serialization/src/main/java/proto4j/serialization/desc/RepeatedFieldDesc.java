@@ -1,21 +1,20 @@
-package de.proto4j.internal.io.desc; //@date 31.01.2022
+package proto4j.serialization.desc; //@date 31.01.2022
 
-import de.proto4j.internal.io.desc.mapping.ArrayMappings;
-import de.proto4j.internal.io.desc.mapping.CollectionMappings;
-import de.proto4j.internal.io.desc.mapping.Mapping;
-import de.proto4j.internal.io.desc.mapping.PrimitiveMappings;
+import proto4j.serialization.mapping.ArrayMappings;
+import proto4j.serialization.mapping.CollectionMappings;
+import proto4j.serialization.mapping.Mapping;
+import proto4j.serialization.mapping.PrimitiveMappings;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.Ref;
 import java.time.temporal.UnsupportedTemporalTypeException;
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.StringJoiner;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 
-import static de.proto4j.internal.io.desc.DescProviderFactory.*;
+import static proto4j.DescProviderFactory.*;
 
 public class RepeatedFieldDesc extends FieldDesc {
 

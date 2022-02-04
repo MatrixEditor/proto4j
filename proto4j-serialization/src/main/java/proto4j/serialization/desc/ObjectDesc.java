@@ -1,7 +1,4 @@
-package de.proto4j.internal.io.desc;//@date 31.01.2022
-
-import de.proto4j.annotation.documentation.Info;
-import de.proto4j.annotation.documentation.UnsafeOperation;
+package proto4j.serialization.desc;//@date 31.01.2022
 
 import java.io.IOException;
 
@@ -22,7 +19,7 @@ public interface ObjectDesc {
      *
      * @return the name of this description.
      */
-    @Info("context-related")
+    //Info("context-related")
     String getName();
 
     /**
@@ -45,6 +42,6 @@ public interface ObjectDesc {
      * @return an {@link ObjectDesc} instance
      * @throws IOException if any error while reading occurs
      */
-    @UnsafeOperation
+    //UnsafeOperation
     ObjectDesc read(String serialized) throws IOException;
 }

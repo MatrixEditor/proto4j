@@ -1,12 +1,16 @@
-package de.proto4j.internal.io.desc; //@date 31.01.2022
+package proto4j; //@date 31.01.2022
 
 import de.proto4j.annotation.message.Component;
-import de.proto4j.annotation.message.Message;
 import de.proto4j.annotation.message.PacketModifier;
-import de.proto4j.annotation.message.TypeSpec;
-import de.proto4j.internal.io.desc.mapping.ArrayMappings;
-import de.proto4j.internal.io.desc.mapping.CollectionMappings;
-import de.proto4j.internal.io.desc.mapping.PrimitiveMappings;
+import proto4j.serialization.TypeSpec;
+import proto4j.serialization.TypeSpecField;
+import proto4j.serialization.desc.FieldDesc;
+import proto4j.serialization.desc.MessageDesc;
+import proto4j.serialization.desc.PrimitiveFieldDesc;
+import proto4j.serialization.desc.RepeatedFieldDesc;
+import proto4j.serialization.mapping.ArrayMappings;
+import proto4j.serialization.mapping.CollectionMappings;
+import proto4j.serialization.mapping.PrimitiveMappings;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -15,7 +19,7 @@ import java.nio.file.ProviderNotFoundException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static de.proto4j.internal.io.desc.FieldDesc.*;
+import static proto4j.serialization.desc.FieldDesc.*;
 
 public final class DescProviderFactory {
 
@@ -28,33 +32,24 @@ public final class DescProviderFactory {
     public static final String RF_REPLACEMENT        = "%r";
     public static final String DELIMITER_REPLACEMENT = "%M";
 
-    /**
-     * Creates a {@link StringBuffer} from a given message object. The structure
-     * of this buffer is as follows:
-     * <pre>
-     *     a.b.ClassName::ClassName\nord-[attributes]-type-len-VALUE-\r...
-     * </pre>
-     * If a collection is stored with a generic type, the <i>type</i> is written
-     * with <code>CollectionType.getName()&PrimitiveType.getName()</code>, for
-     * instance:
-     * <pre>
-     *     CollectionType: java.util.LinkedList
-     *     PrimitiveType: java.lang.String
-     *
-     *     type = java.util.LinkedList&java.lang.String
-     * </pre>
-     *
-     * @param message the message instance
-     * @return a buffer that represents that instance
-     */
+    public static FieldDesc forType(String valueType) {
+        if (valueType.contains("&"))
+            return new RepeatedFieldDesc();
+        else {
+            if (valueType.contains("!")) {
+                return new TypeSpecField();
+            }
+            try {
+                return PrimitiveMappings.containsName(valueType) ? new PrimitiveFieldDesc() : new RepeatedFieldDesc();
+            } catch (Exception e) {/**/}
+        }
+        throw new ProviderNotFoundException();
+    }
+
     public static StringBuffer allocate(Object message) throws IOException {
         if (message == null) throw new NullPointerException("message is null");
 
         Class<?> messageClass = message.getClass();
-        if (!messageClass.isAnnotationPresent(Message.class)) {
-            throw new IllegalArgumentException("Object is not an instance of Message.class");
-        }
-
         StringBuffer buf  = new StringBuffer();
         MessageDesc  desc = new MessageDesc();
 
@@ -66,12 +61,12 @@ public final class DescProviderFactory {
             if (!f0.canAccess(message)) f0.setAccessible(true);
 
             if (PacketModifier.isComponent(f0)) {
-                FieldDesc fieldDesc = forType(f0.getType());
+                FieldDesc fieldDesc = forType(f0.getType().getName());
 
                 fieldDesc.setOrdinal(f0.getDeclaredAnnotation(Component.class).ord());
 
                 if (PacketModifier.isAny(f0)) fieldDesc.addModifier(FieldDesc.ANY_TYPE_MODIFIER);
-                else if (PacketModifier.hasTypeSpec(f0)) {
+                else if (f0.isAnnotationPresent(TypeSpec.class)) {
                     fieldDesc.addModifier(TYPE_SPEC_MODIFIER);
                     fieldDesc.setType(f0.getDeclaredAnnotation(TypeSpec.class).value());
                 }
@@ -85,23 +80,14 @@ public final class DescProviderFactory {
                 try {
                     fieldDesc.setValue(f0.get(message));
                 } catch (ReflectiveOperationException e) {/**/}
+
+                fieldDesc.setType(f0.getType());
                 desc.getFields().add(fieldDesc);
             }
 
         }
         buf.append(desc.serialize());
         return buf;
-    }
-
-    public static FieldDesc forType(Class<?> valueType) {
-        if (PrimitiveMappings.contains(valueType))
-            return new PrimitiveFieldDesc();
-        else {
-            if (ArrayMappings.contains(valueType) || CollectionMappings.contains(valueType)) {
-                return new RepeatedFieldDesc();
-            }
-        }
-        throw new ProviderNotFoundException();
     }
 
     public static Object convert(byte[] decryptedData, Set<Class<?>> readable) throws IOException {
@@ -150,5 +136,4 @@ public final class DescProviderFactory {
             throw new IllegalCallerException("could not initialize message object");
         }
     }
-
 }

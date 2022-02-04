@@ -54,10 +54,6 @@ public class PacketModifier {
         return e != null && e.isAnnotationPresent(AnyType.class) && !e.isAnnotationPresent(Deprecated.class);
     }
 
-    public static boolean hasTypeSpec(AnnotatedElement e) {
-        return e != null && e.isAnnotationPresent(TypeSpec.class) && !e.isAnnotationPresent(Deprecated.class);
-    }
-
     private static boolean checkConstructor(Class<?> c, Class<? extends Annotation> a) {
         if (c != null) {
             for (Constructor<?> con : c.getDeclaredConstructors()) {

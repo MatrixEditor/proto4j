@@ -1,14 +1,13 @@
-package de.proto4j.internal.io.desc; //@date 31.01.2022
+package proto4j.serialization.desc; //@date 31.01.2022
 
-import de.proto4j.internal.io.desc.mapping.Mapping;
-import de.proto4j.internal.io.desc.mapping.PrimitiveMappings;
+import proto4j.serialization.mapping.Mapping;
+import proto4j.serialization.mapping.PrimitiveMappings;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.function.Function;
 
-import static de.proto4j.internal.io.desc.DescProviderFactory.DEFAULT_DELIMITER;
-import static de.proto4j.internal.io.desc.DescProviderFactory.RF;
+import static proto4j.DescProviderFactory.DEFAULT_DELIMITER;
+import static proto4j.DescProviderFactory.RF;
 
 public class PrimitiveFieldDesc extends FieldDesc {
 

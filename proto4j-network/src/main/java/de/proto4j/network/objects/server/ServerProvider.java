@@ -66,6 +66,8 @@ public final class ServerProvider {
                     if (s == FirstParameterSelector.class) {
                         Selector inst = new FirstParameterSelector(m.getParameterTypes()[0]);
                         server.createContext(inst, ish);
+                    } else if (s == Selector.class) {
+                      server.createContext(m.getParameters(), ish);
                     } else server.createContext(cc.getSelectorType(), ish);
                 }
             }

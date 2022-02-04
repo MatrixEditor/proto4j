@@ -106,7 +106,7 @@ public class Reflections {
                 String p = main.getDeclaredAnnotation(RootPackage.class).value();
                 if (p.length() == 0) p = main.getPackageName();
                 addIfAbsent(p);
-                String s = p.substring(p.lastIndexOf('.'));
+                String s = p.substring(0, p.lastIndexOf('.'));
                 addIfAbsent(s);
             } else {
                 List<String> names = generateNames(main);

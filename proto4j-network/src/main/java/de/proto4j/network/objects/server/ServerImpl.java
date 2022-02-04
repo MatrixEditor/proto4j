@@ -8,9 +8,11 @@ import de.proto4j.internal.logger.LogMessage;
 import de.proto4j.internal.logger.Logger;
 import de.proto4j.internal.logger.PrintColor;
 import de.proto4j.internal.logger.PrintService;
+import de.proto4j.internal.method.MethodLookup;
 import de.proto4j.network.objects.*;
 
 import java.io.IOException;
+import java.lang.reflect.Parameter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketException;
@@ -25,7 +27,7 @@ class ServerImpl {
 
     private static final Logger LOGGER = PrintService.createLogger(ObjectServer.class);
 
-    private final List<ObjectContext<? extends Selector>> contextList;
+    private final List<ObjectContext<SelectorContext>> contextList;
     private final List<Class<?>>                          readableMessages;
 
     private final Object       connectionLock = new Object();
@@ -35,7 +37,6 @@ class ServerImpl {
     private final ServerSocketChannel                  ssChan;
     private final Map<SocketChannel, ObjectConnection> allConnections;
 
-    private final Selectors  selectors;
     private final Dispatcher dispatcher;
 
     private ExecutorService threadPool;
@@ -66,7 +67,6 @@ class ServerImpl {
         time             = System.currentTimeMillis();
         contextList      = new LinkedList<>();
         dispatcher       = new Dispatcher();
-        selectors        = Selectors.newInstance();
         readableMessages = new LinkedList<>();
     }
 
@@ -127,15 +127,27 @@ class ServerImpl {
         } catch (InterruptedException e) {/**/}
     }
 
-    public synchronized ObjectContext<? extends Selector> createContext(Class<? extends Selector> o,
-                                                                        ObjectContext.Handler handler) {
+    public synchronized ObjectContext<SelectorContext> createContext(Parameter[] parameters, ObjectContext.Handler handler) {
+        if (parameters == null || handler == null) {
+            throw new NullPointerException("Mapping or Handler == null");
+        }
+
+        ObjectContextImpl<SelectorContext> ctx = new ObjectContextImpl<>(SelectorContext.ofMethod(parameters),
+                                                                         handler, wrapper);
+        contextList.add(ctx);
+        return ctx;
+    }
+
+    public synchronized ObjectContext<SelectorContext> createContext(Class<? extends Selector> o,
+                                                                     ObjectContext.Handler handler) {
         if (o == null || handler == null) {
             throw new NullPointerException("Mapping or Handler == null");
         }
         try {
             Selector mapping = o.getDeclaredConstructor().newInstance();
 
-            ObjectContextImpl<? extends Selector> ctx = new ObjectContextImpl<>(mapping, handler, wrapper);
+            ObjectContextImpl<SelectorContext> ctx = new ObjectContextImpl<>(SelectorContext.ofSelector(mapping),
+                                                                             handler, wrapper);
             contextList.add(ctx);
             return ctx;
         } catch (ReflectiveOperationException e) {
@@ -144,12 +156,12 @@ class ServerImpl {
         return null;
     }
 
-    public synchronized ObjectContext<? extends Selector> createContext(Selector o,
-                                                                        ObjectContext.Handler handler) {
-        if (o == null || handler == null) {
+    public synchronized ObjectContext<SelectorContext> createContext(Selector mapping, ObjectContext.Handler handler) {
+        if (mapping == null || handler == null) {
             throw new NullPointerException("Mapping or Handler == null");
         }
-        ObjectContextImpl<? extends Selector> ctx = new ObjectContextImpl<>(o, handler, wrapper);
+        ObjectContextImpl<SelectorContext> ctx = new ObjectContextImpl<>(SelectorContext.ofSelector(mapping),
+                                                                         handler, wrapper);
         contextList.add(ctx);
         return ctx;
     }
@@ -200,9 +212,16 @@ class ServerImpl {
     }
 
     private ObjectContext<?> findContext(Object message) {
-        for (ObjectContext<? extends Selector> oc : contextList) {
-            if (oc.getMapping().canSelect(message))
-                return oc;
+        for (ObjectContext<SelectorContext> oc : contextList) {
+            if (oc.getMapping().hasDefaultSelection()) {
+                if (MethodLookup.select(message, oc.getMapping().getParameters())) {
+                    return oc;
+                }
+            } else {
+                if (oc.getMapping().getSelector().canSelect(message)) {
+                    return oc;
+                }
+            }
         }
         return null;
     }

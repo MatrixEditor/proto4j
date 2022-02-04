@@ -14,6 +14,7 @@ import de.proto4j.internal.io.Proto4jWriter;
 import de.proto4j.internal.logger.Logger;
 import de.proto4j.internal.logger.PrintColor;
 import de.proto4j.internal.logger.PrintService;
+import de.proto4j.internal.method.MethodLookup;
 import de.proto4j.internal.model.Reflections;
 import de.proto4j.internal.model.bean.BeanManager;
 import de.proto4j.internal.model.bean.MapBeanManager;
@@ -43,7 +44,7 @@ public final class ClientProvider {
         List<String> conf = new LinkedList<>();
 
 
-        BeanManager  manager = new MapBeanManager();
+        BeanManager manager = new MapBeanManager();
 
         Set<Class<?>> beans = Reflections.getClassesFromMain(mainClass);
         if (Configuration.Lookup.areValuesIgnored(mainClass)) {
@@ -108,15 +109,17 @@ public final class ClientProvider {
                             Selector selector = new AddressSelector(con.value());
                             client.createContext(selector, ich);
                         }
+                    } else if (s == Selector.class) {
+                        client.createContext(m.getParameters(), ich);
                     } else client.createContext(cc.getSelectorType(), ich);
                 }
             }
         });
 
-        // this method actually has no side effects -> there are only a few
-        // checks that has to be done to make sure no errors would display.
         client.getConfiguration().addAll(conf);
 
+        // this method actually has no side effects -> there are only a few
+        // checks that has to be done to make sure no errors would display.
         client.start();
         return new ClientContext(client, manager, beans, mainClass, conf);
 
@@ -144,21 +147,30 @@ public final class ClientProvider {
             boolean fromParallel = m.isAnnotationPresent(Parallel.class)
                     || m.isAnnotationPresent(SupplyParallel.class);
 
+            Object[] args;
+            if (m.getParameterCount() == 1 && ObjectExchange.class.isAssignableFrom(m.getParameters()[0].getType())) {
+                args = new Object[] {exchange};
+            } else {
+                try {
+                    args = MethodLookup.tryCreate(exchange.getMessage(), m.getParameters());
+                } catch (IllegalAccessException e) {
+                    logger.except(PrintColor.DARK_RED, e);
+                    return;
+                }
+            }
 
             if (!fromParallel) {
-                if (m.getParameterCount() == 1) {
-                    response = invokeMethod(exchange, m);
-                }
+                response = invokeMethod(args, m);
             } else {
                 if (m.isAnnotationPresent(Parallel.class)) {
                     ParallelExecutor pe = Threads.newParallelThreadExecutor();
-                    pe.execute(() -> invokeMethod(exchange, m));
+                    pe.execute(() -> invokeMethod(args, m));
                 } else {
                     ParallelSupplier ps = Threads.newSingleThreadSupplier();
-                    response = ps.supplyAsync(() -> invokeMethod(exchange, m));
+                    response = ps.supplyAsync(() -> invokeMethod(args, m));
                 }
             }
-            if (cache.getMethod().isAnnotationPresent(ConnectionHandler.class)) return;
+            if (m.isAnnotationPresent(ConnectionHandler.class)) return;
 
             if (m.isAnnotationPresent(ResponseBody.class)) {
                 if (response != null && client.getMessageTypes().contains(response.getClass())) {
@@ -172,19 +184,11 @@ public final class ClientProvider {
             }
         }
 
-        private Object invokeMethod(ObjectExchange exchange, Method m) {
-            if (ObjectExchange.class.isAssignableFrom(m.getParameterTypes()[0])) {
-                try {
-                    return m.invoke(cache.getInvoker(), exchange);
-                } catch (InvocationTargetException | IllegalAccessException e) {
-                    logger.except(PrintColor.DARK_RED, e);
-                }
-            } else if (exchange.getMessage().getClass().isAssignableFrom(m.getParameterTypes()[0])) {
-                try {
-                    return m.invoke(cache.getInvoker(), exchange.getMessage());
-                } catch (InvocationTargetException | IllegalAccessException e) {
-                    logger.except(PrintColor.DARK_RED, e);
-                }
+        private Object invokeMethod(Object[] args, Method m) {
+            try {
+                return m.invoke(cache.getInvoker(), args);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                logger.except(PrintColor.DARK_RED, e);
             }
             return null;
         }

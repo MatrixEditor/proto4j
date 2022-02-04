@@ -1,6 +1,4 @@
-package de.proto4j.internal.io.desc; //@date 31.01.2022
-
-import de.proto4j.annotation.documentation.Info;
+package proto4j.serialization.desc; //@date 31.01.2022
 
 public abstract class FieldDesc implements ObjectDesc {
 
@@ -18,7 +16,6 @@ public abstract class FieldDesc implements ObjectDesc {
 
     private int modifiers;
 
-    @Info("FieldDesc")
     private Object value;
 
     public boolean hasModifier(int m) {
