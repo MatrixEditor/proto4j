@@ -12,17 +12,17 @@ This project contains a fully implemented client-server infrastructure controlle
 Before you begin, ensure you have met the following requirements:
 
 * You have installed the latest version of `JDK 13.0.2`
-* You have read the [guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/guide.md).
+* You have read the [guide](https://github.com/MatrixEditor/proto4j/blob/main/guide.md).
 
 Take a look at the **dev-001** branch and see the examples of http-server and a self-coded server-client infrastructure in the dev-module.
 
 ## Guides
 
 Below a list of individual guides to specific topics of this project is given:
-* [general-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/guide.md)
-* [message-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/message-guide.md)
-* [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/annotation-guide.md)
-* [serialization-format](https://github.com/MatrixEditor/proto4j/blob/readme-002/serialization-format.md)
+* [general-guide](https://github.com/MatrixEditor/proto4j/blob/main/guide.md)
+* [message-guide](https://github.com/MatrixEditor/proto4j/blob/main/message-guide.md)
+* [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/rmain/annotation-guide.md)
+* [serialization-format](https://github.com/MatrixEditor/proto4j/blob/main/serialization-format.md)
 
 ## Contributing
 
