@@ -1,6 +1,6 @@
 package de.proto4j.network.objects.client; //@date 29.01.2022
 
-import de.proto4j.annotation.selection.Selector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.network.objects.ObjectConnection;
 import de.proto4j.network.objects.ObjectContext;
 import de.proto4j.network.objects.SelectorContext;
@@ -8,9 +8,9 @@ import de.proto4j.network.objects.SelectorContext;
 import java.io.IOException;
 import java.lang.reflect.Parameter;
 import java.net.SocketAddress;
-import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 class ObjectClientImpl extends ObjectClient {
@@ -80,5 +80,10 @@ class ObjectClientImpl extends ObjectClient {
     @Override
     public List<String> getConfiguration() {
         return client.getConfiguration();
+    }
+
+    @Override
+    public Collection<ObjectConnection> getAllConnections() {
+        return Collections.unmodifiableCollection(client.getConnections().values());
     }
 }

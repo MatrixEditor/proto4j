@@ -1,6 +1,6 @@
 package de.proto4j.annotation.server.requests;//@date 27.01.2022
 
-import de.proto4j.annotation.selection.Selector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

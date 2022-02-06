@@ -1,6 +1,6 @@
 package de.proto4j.network.objects.client; //@date 29.01.2022
 
-import de.proto4j.annotation.selection.Selector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.network.objects.ObjectConnection;
 import de.proto4j.network.objects.ObjectContext;
 import de.proto4j.network.objects.SelectorContext;
@@ -8,11 +8,9 @@ import de.proto4j.network.objects.SelectorContext;
 import java.io.IOException;
 import java.lang.reflect.Parameter;
 import java.net.SocketAddress;
-import java.nio.channels.SocketChannel;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 public abstract class ObjectClient {
@@ -48,5 +46,9 @@ public abstract class ObjectClient {
 
     public abstract void connectTo(SocketAddress remote);
 
+    public abstract Collection<ObjectConnection> getAllConnections();
+
     protected abstract List<String> getConfiguration();
+
+
 }

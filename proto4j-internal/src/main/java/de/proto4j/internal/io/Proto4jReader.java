@@ -1,6 +1,6 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
-import proto4j.DescProviderFactory;
+import de.proto4j.DescProviderFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -40,6 +40,7 @@ public class Proto4jReader extends InputStream {
         closed = reset = false;
 
         readable.addAll(readableClasses);
+
     }
 
     public synchronized Object readMessage() throws IOException {
@@ -87,7 +88,6 @@ public class Proto4jReader extends InputStream {
         if (off < 0 || len < 0 || len > (b.length - off)) {
             throw new IndexOutOfBoundsException();
         }
-
         buf.clear();
         if (len < BUF_SIZE) {
             buf.limit(len);

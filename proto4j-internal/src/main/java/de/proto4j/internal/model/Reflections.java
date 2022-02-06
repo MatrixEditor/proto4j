@@ -2,7 +2,11 @@ package de.proto4j.internal.model; //@date 23.01.2022
 
 import de.proto4j.annotation.message.Message;
 import de.proto4j.annotation.message.PacketModifier;
+import de.proto4j.internal.MessageRoot;
 import de.proto4j.internal.RootPackage;
+import de.proto4j.internal.logger.Logger;
+import de.proto4j.internal.logger.PrintColor;
+import de.proto4j.internal.logger.PrintService;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,6 +21,8 @@ import java.util.stream.IntStream;
 public class Reflections {
 
     public static final Predicate<String> FILENAME_FILTER = (x) -> x.endsWith("class") && !x.contains("package-info");
+
+    private static final Logger LOGGER = PrintService.createLogger(Reflections.class);
 
     public static final Set<Class<?>> cachedRuntimeClasses = new HashSet<>();
 
@@ -102,6 +108,10 @@ public class Reflections {
         private int pointer = 0;
 
         public PackageGeneratorImpl(Class<?> main) {
+            if (main.isAnnotationPresent(MessageRoot.class)) {
+                addIfAbsent(main.getDeclaredAnnotation(MessageRoot.class).value());
+            }
+
             if (main.isAnnotationPresent(RootPackage.class)) {
                 String p = main.getDeclaredAnnotation(RootPackage.class).value();
                 if (p.length() == 0) p = main.getPackageName();
@@ -185,7 +195,7 @@ public class Reflections {
                             }
                         }
                     } catch (IOException | ClassNotFoundException e) {
-                        // ignore
+                        LOGGER.except(PrintColor.BRIGHT_MAGENTA, e);
                     }
                 }
             }
@@ -223,7 +233,7 @@ public class Reflections {
                         }
                     }
                 } catch (IOException | ClassNotFoundException e) {
-                    // ignore
+                    LOGGER.except(PrintColor.BRIGHT_MAGENTA, e);
                 }
             }
             return classSet;

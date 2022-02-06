@@ -1,6 +1,6 @@
 package de.proto4j.network.objects; //@date 30.01.2022
 
-import de.proto4j.annotation.selection.Selector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;

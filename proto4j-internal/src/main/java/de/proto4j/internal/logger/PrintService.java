@@ -10,15 +10,15 @@ public class PrintService {
 
     public static Logger createLogger(Class<?> aClass) {
         if (aClass != null) {
-            return (l, c, m) -> {
-                if (DO_LOG)
-                    System.out.printf("\033%s[%s]\033[0m {%s} (%s): %s\n",
-                                      c.getColorCode(), aClass.getSimpleName(),
-                                      Thread.currentThread().getName(),
-                                      l.name().toUpperCase(), m.getMessage());
-            };
+            return (l, c, m) -> doLog(l, c, m, aClass);
         }
         return null;
+    }
+
+    private static void doLog(Logger.Level l, PrintColor pc, LogMessage m, Class<?> aClass) {
+        if (!DO_LOG) return;
+        System.out.printf("\033%s[%s]\033[0m {%s} (%s): %s\n", pc.getColorCode(), aClass.getSimpleName(),
+                          Thread.currentThread().getName(), l.name().toUpperCase(), m.getMessage());
     }
 
 }

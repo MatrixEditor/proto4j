@@ -1,6 +1,6 @@
 package de.proto4j.network.objects.server; //@date 28.01.2022
 
-import de.proto4j.annotation.selection.Selector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.network.objects.ObjectConnection;
 import de.proto4j.network.objects.ObjectContext;
 import de.proto4j.network.objects.SelectorContext;
@@ -8,9 +8,9 @@ import de.proto4j.network.objects.SelectorContext;
 import java.io.IOException;
 import java.lang.reflect.Parameter;
 import java.net.InetSocketAddress;
-import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -90,5 +90,10 @@ class ObjectServerImpl extends ObjectServer {
     @Override
     public List<Class<?>> getMessageTypes() {
         return server.getReadableMessages();
+    }
+
+    @Override
+    public Collection<ObjectConnection> getAllConnections() {
+        return Collections.unmodifiableCollection(server.getAllConnections().values());
     }
 }

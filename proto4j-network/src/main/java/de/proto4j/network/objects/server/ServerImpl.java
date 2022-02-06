@@ -1,7 +1,6 @@
 package de.proto4j.network.objects.server; //@date 28.01.2022
 
-import de.proto4j.annotation.selection.Selector;
-import de.proto4j.annotation.selection.Selectors;
+import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
 import de.proto4j.internal.logger.LogMessage;
@@ -28,7 +27,7 @@ class ServerImpl {
     private static final Logger LOGGER = PrintService.createLogger(ObjectServer.class);
 
     private final List<ObjectContext<SelectorContext>> contextList;
-    private final List<Class<?>>                          readableMessages;
+    private final List<Class<?>>                       readableMessages;
 
     private final Object       connectionLock = new Object();
     private final ObjectServer wrapper;
@@ -127,7 +126,8 @@ class ServerImpl {
         } catch (InterruptedException e) {/**/}
     }
 
-    public synchronized ObjectContext<SelectorContext> createContext(Parameter[] parameters, ObjectContext.Handler handler) {
+    public synchronized ObjectContext<SelectorContext> createContext(Parameter[] parameters,
+                                                                     ObjectContext.Handler handler) {
         if (parameters == null || handler == null) {
             throw new NullPointerException("Mapping or Handler == null");
         }
@@ -214,7 +214,11 @@ class ServerImpl {
     private ObjectContext<?> findContext(Object message) {
         for (ObjectContext<SelectorContext> oc : contextList) {
             if (oc.getMapping().hasDefaultSelection()) {
-                if (MethodLookup.select(message, oc.getMapping().getParameters())) {
+                if (oc.getMapping().getParameters().length == 1) {
+                    if (ObjectExchange.class.isAssignableFrom(oc.getMapping().getParameters()[0].getType()))
+                        return oc;
+                }
+                if (MethodLookup.select(message, oc.getMapping().getParameters(), ObjectExchange.class)) {
                     return oc;
                 }
             } else {
@@ -234,24 +238,25 @@ class ServerImpl {
 
         @Override
         public void run() {
+            SocketChannel chan = null;
             while (!finished) try {
                 if (terminating) continue;
 
-                SocketChannel chan = ssChan.accept();
+                chan  = ssChan.accept();
                 if (chan != null) {
-                    chan.configureBlocking(false);
+                    chan.configureBlocking(true);
                     ObjectConnection oc = new ObjectConnection();
                     oc.setChannel(chan);
                     allConnections.put(chan, oc);
 
-                    LOGGER.info(PrintColor.DARK_GREEN,
+                    LOGGER.info(PrintColor.LIGHT_GREY,
                                 LogMessage.of("new connection from (%s)", ((InetSocketAddress) chan.getRemoteAddress())
                                         .getAddress().getHostAddress()));
                     handle(chan, oc);
                 }
             } catch (IOException ioe) {
                 if (ioe instanceof AsynchronousCloseException) {
-                    break;
+                    if (chan != null) allConnections.remove(chan);
                 }
                 LOGGER.except(PrintColor.DARK_RED, ioe);
             }
@@ -314,7 +319,7 @@ class ServerImpl {
                     LOGGER.except(PrintColor.DARK_RED, ex);
                 }
             }
-
+            allConnections.remove(chan);
         }
     }
 }

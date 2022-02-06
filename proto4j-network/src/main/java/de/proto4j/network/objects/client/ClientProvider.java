@@ -1,14 +1,14 @@
 package de.proto4j.network.objects.client; //@date 29.01.2022
 
 import de.proto4j.annotation.message.Message;
-import de.proto4j.annotation.selection.FirstParameterSelector;
-import de.proto4j.annotation.selection.Selector;
 import de.proto4j.annotation.server.Configuration;
 import de.proto4j.annotation.server.TypeClient;
 import de.proto4j.annotation.server.requests.ConnectionHandler;
 import de.proto4j.annotation.server.requests.Controller;
 import de.proto4j.annotation.server.requests.RequestHandler;
 import de.proto4j.annotation.server.requests.ResponseBody;
+import de.proto4j.annotation.server.requests.selection.FirstParameterSelector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.annotation.threding.*;
 import de.proto4j.internal.io.Proto4jWriter;
 import de.proto4j.internal.logger.Logger;
@@ -18,15 +18,14 @@ import de.proto4j.internal.method.MethodLookup;
 import de.proto4j.internal.model.Reflections;
 import de.proto4j.internal.model.bean.BeanManager;
 import de.proto4j.internal.model.bean.MapBeanManager;
-import de.proto4j.network.objects.AddressSelector;
-import de.proto4j.network.objects.ContextCache;
-import de.proto4j.network.objects.ObjectContext;
-import de.proto4j.network.objects.ObjectExchange;
+import de.proto4j.network.objects.*;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -125,6 +124,16 @@ public final class ClientProvider {
 
     }
 
+    public static ObjectConnection getConnection(String host, ObjectClient client) {
+        Collection<ObjectConnection> c = client.getAllConnections();
+        if (c.size() == 0) return null;
+
+        return c.stream().filter(oc -> ((InetSocketAddress) oc.getChannel().socket().getRemoteSocketAddress())
+                .getAddress().getHostAddress().equals(host))
+                .findFirst()
+                .orElse(null);
+    }
+
     private static class InternalClientHandler implements ObjectContext.Handler {
 
         private static final Logger logger = PrintService.createLogger(InternalClientHandler.class);
@@ -149,10 +158,10 @@ public final class ClientProvider {
 
             Object[] args;
             if (m.getParameterCount() == 1 && ObjectExchange.class.isAssignableFrom(m.getParameters()[0].getType())) {
-                args = new Object[] {exchange};
+                args = new Object[]{exchange};
             } else {
                 try {
-                    args = MethodLookup.tryCreate(exchange.getMessage(), m.getParameters());
+                    args = MethodLookup.tryCreate(exchange.getMessage(), exchange, m.getParameters());
                 } catch (IllegalAccessException e) {
                     logger.except(PrintColor.DARK_RED, e);
                     return;

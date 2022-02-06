@@ -1,14 +1,18 @@
 package de.proto4j.network.objects.server; //@date 29.01.2022
 
 import de.proto4j.annotation.message.Message;
-import de.proto4j.annotation.selection.FirstParameterSelector;
-import de.proto4j.annotation.selection.Selector;
 import de.proto4j.annotation.server.TypeServer;
 import de.proto4j.annotation.server.requests.Controller;
 import de.proto4j.annotation.server.requests.RequestHandler;
 import de.proto4j.annotation.server.requests.ResponseBody;
+import de.proto4j.annotation.server.requests.selection.FirstParameterSelector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.annotation.threding.*;
 import de.proto4j.internal.io.Proto4jWriter;
+import de.proto4j.internal.logger.Logger;
+import de.proto4j.internal.logger.PrintColor;
+import de.proto4j.internal.logger.PrintService;
+import de.proto4j.internal.method.MethodLookup;
 import de.proto4j.internal.model.Reflections;
 import de.proto4j.internal.model.bean.BeanManager;
 import de.proto4j.internal.model.bean.MapBeanManager;
@@ -91,6 +95,8 @@ public final class ServerProvider {
 
     private static class InternalServerHandler implements ObjectContext.Handler {
 
+        private static final Logger logger = PrintService.createLogger(InternalServerHandler.class);
+
         private final ContextCache cache;
         private final ObjectServer server;
 
@@ -109,44 +115,47 @@ public final class ServerProvider {
             boolean fromParallel = m.isAnnotationPresent(Parallel.class)
                     || m.isAnnotationPresent(SupplyParallel.class);
 
-            if (!fromParallel) {
-                if (m.getParameterCount() == 1) {
-                    response = invokeMethod(exchange, m);
+            Object[] args;
+            if (m.getParameterCount() == 1 && ObjectExchange.class.isAssignableFrom(m.getParameters()[0].getType())) {
+                args = new Object[]{exchange};
+            } else {
+                try {
+                    args = MethodLookup.tryCreate(exchange.getMessage(), exchange, m.getParameters());
+                } catch (IllegalAccessException e) {
+                    //log
+                    return;
                 }
+            }
+
+            if (!fromParallel) {
+                response = invokeMethod(args, m);
             } else {
                 if (m.isAnnotationPresent(Parallel.class)) {
                     ParallelExecutor pe = Threads.newParallelThreadExecutor();
-                    pe.execute(() -> invokeMethod(exchange, m));
+                    pe.execute(() -> invokeMethod(args, m));
                 } else {
                     ParallelSupplier ps = Threads.newSingleThreadSupplier();
-                    response = ps.supplyAsync(() -> invokeMethod(exchange, m));
+                    response = ps.supplyAsync(() -> invokeMethod(args, m));
                 }
             }
             if (m.isAnnotationPresent(ResponseBody.class)) {
+                // this check prevents exceptions to be thrown from the underlying Proto4jWriter.
                 if (response != null && server.getMessageTypes().contains(response.getClass())) {
                     try {
                         Proto4jWriter w = (Proto4jWriter) exchange.getResponseBody();
                         w.write(response);
                     } catch (IOException e) {
-                        // log
+                        logger.except(PrintColor.DARK_RED, e);
                     }
                 }
             }
         }
 
-        private Object invokeMethod(ObjectExchange exchange, Method m) {
-            if (ObjectExchange.class.isAssignableFrom(m.getParameterTypes()[0])) {
-                try {
-                    return m.invoke(cache.getInvoker(), exchange);
-                } catch (InvocationTargetException | IllegalAccessException e) {
-                    // log e.printStackTrace();
-                }
-            } else if (exchange.getMessage().getClass().isAssignableFrom(m.getParameterTypes()[0])) {
-                try {
-                    return m.invoke(cache.getInvoker(), exchange.getMessage());
-                } catch (InvocationTargetException | IllegalAccessException e) {
-                    // log e.printStackTrace();
-                }
+        private Object invokeMethod(Object[] args, Method m) {
+            try {
+                return m.invoke(cache.getInvoker(), args);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                logger.except(PrintColor.DARK_RED, e);
             }
             return null;
         }

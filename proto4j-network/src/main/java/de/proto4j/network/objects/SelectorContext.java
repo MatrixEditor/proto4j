@@ -1,6 +1,6 @@
 package de.proto4j.network.objects;//@date 04.02.2022
 
-import de.proto4j.annotation.selection.Selector;
+import de.proto4j.annotation.server.requests.selection.Selector;
 
 import java.lang.reflect.Parameter;
 

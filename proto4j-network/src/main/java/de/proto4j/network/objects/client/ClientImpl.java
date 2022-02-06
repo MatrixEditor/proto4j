@@ -1,7 +1,7 @@
 package de.proto4j.network.objects.client; //@date 29.01.2022
 
-import de.proto4j.annotation.selection.Selector;
 import de.proto4j.annotation.server.Configuration;
+import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
 import de.proto4j.internal.method.MethodLookup;
@@ -12,7 +12,7 @@ import java.lang.reflect.Parameter;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 
 class ClientImpl {
 
-    private final Map<SocketChannel, ObjectConnection> connections = new HashMap<>();
+    private final Map<SocketChannel, ObjectConnection> connections = new Hashtable<>();
 
     private final List<Class<?>>                       messageTypes = new LinkedList<>();
     private final List<ObjectContext<SelectorContext>> contexts     = new LinkedList<>();
@@ -46,7 +46,7 @@ class ClientImpl {
         try {
             SocketChannel channel = SocketChannel.open(remote);
             if (channel != null) {
-                channel.configureBlocking(false);
+                channel.configureBlocking(true);
 
                 Thread t = new Thread(new Dispatcher(channel));
                 t.start();
@@ -165,7 +165,7 @@ class ClientImpl {
         for (ObjectContext<SelectorContext> oc : contexts) {
             if (oc != null) {
                 if (oc.getMapping().hasDefaultSelection()) {
-                    if (MethodLookup.select(message, oc.getMapping().getParameters())) {
+                    if (MethodLookup.select(message, oc.getMapping().getParameters(), ObjectExchange.class)) {
                         return oc;
                     }
                 } else {
@@ -204,11 +204,16 @@ class ClientImpl {
         private final Proto4jReader rin;
         private final Proto4jWriter rout;
         private final SocketChannel channel;
+        private final ObjectConnection conn;
 
         public Dispatcher(SocketChannel channel) {
             rin          = new Proto4jReader(channel, getMessageTypes());
             rout         = new Proto4jWriter(channel);
             this.channel = channel;
+
+            conn = new ObjectConnection();
+            conn.setParameters(rout, channel, rin, null);
+            connections.put(channel, conn);
         }
 
         @Override
@@ -223,9 +228,7 @@ class ClientImpl {
                     }
                     ObjectContext<?> oc = findBySelector(remote);
                     if (oc != null) {
-                        ObjectConnection conn = new ObjectConnection();
-                        conn.setParameters(rout, channel, rin, oc);
-
+                        conn.setContext(oc);
                         connections.put(channel, conn);
 
                         ObjectExchange ex = new ObjectExchangeImpl(conn, null);
@@ -250,8 +253,7 @@ class ClientImpl {
                     if (message != null) {
                         ObjectContext<?> oc = findBySelector(message);
                         if (oc != null) {
-                            ObjectConnection conn = new ObjectConnection();
-                            conn.setParameters(rout, channel, rin, oc);
+                            conn.setContext(oc);
 
                             ObjectExchange ex = new ObjectExchangeImpl(conn, message);
                             service.execute(new InternalInvokerHelper(ex, channel));

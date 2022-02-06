@@ -8,6 +8,10 @@ import java.lang.reflect.Parameter;
 public class MethodLookup {
 
     public static boolean select(Object o, Parameter[] parameters) {
+        return select(o, parameters, null);
+    }
+
+    public static boolean select(Object o, Parameter[] parameters, Class<?> includeParameter) {
         if (o == null || parameters == null) return false;
 
         switch (parameters.length) {
@@ -15,7 +19,8 @@ public class MethodLookup {
                 return false;
 
             case 1:
-                if (parameters[0].getType().isAssignableFrom(o.getClass())) {
+                if (parameters[0].getType().isAssignableFrom(o.getClass())
+                        || parameters[0].getType().isAssignableFrom(includeParameter)) {
                     return true;
                 } else if (parameters[0].isAnnotationPresent(Param.class)) {
                     Field f = hasField(parameters[0].getDeclaredAnnotation(Param.class).value(), o);
@@ -27,15 +32,25 @@ public class MethodLookup {
                 for (Parameter p : parameters) {
                     if (p.isAnnotationPresent(Param.class)) {
                         Field f = hasField(p.getDeclaredAnnotation(Param.class).value(), o);
+                        if (f == null) {
+                            if (p.getType().isAssignableFrom(includeParameter))
+                                continue;
+                        }
                         if (f == null || !p.getType().isAssignableFrom(f.getType()))
                             return false;
                     }
+                    if (p.getType().isAssignableFrom(includeParameter)
+                        || p.getType().isAssignableFrom(o.getClass())) {
+                        continue;
+                    }
+
+                    return false;
                 }
                 return true;
         }
     }
 
-    public static Object[] tryCreate(Object o, Parameter[] parameters) throws IllegalAccessException {
+    public static Object[] tryCreate(Object o, Object exchange, Parameter[] parameters) throws IllegalAccessException {
         if (o == null || parameters == null) throw new IllegalArgumentException();
 
         switch (parameters.length) {
@@ -45,8 +60,10 @@ public class MethodLookup {
             case 1:
                 if (parameters[0].getType().isAssignableFrom(o.getClass())) {
                     return new Object[]{o};
+                } else if (parameters[0].getType().isAssignableFrom(o.getClass())) {
+                    return new Object[] {exchange};
                 } else if (parameters[0].isAnnotationPresent(Param.class)) {
-                    Object[] args = new Object[]{get(parameters[0], o)};
+                    Object[] args = new Object[]{get(parameters[0], o, exchange)};
                     if (args[0] != null) {
                         return args;
                     }
@@ -56,7 +73,7 @@ public class MethodLookup {
             default:
                 Object[] args = new Object[parameters.length];
                 for (int i = 0; i < parameters.length; i++) {
-                    Object x = get(parameters[i], o);
+                    Object x = get(parameters[i], o ,exchange);
                     if (x == null) throw new IllegalArgumentException();
                     args[i] = x;
                 }
@@ -64,13 +81,17 @@ public class MethodLookup {
         }
     }
 
-    private static Object get(Parameter p, Object o) throws IllegalAccessException {
+    private static Object get(Parameter p, Object o, Object exchange) throws IllegalAccessException {
         if (p.getType().isAssignableFrom(o.getClass())) return o;
+        if (p.getType().isAssignableFrom(exchange.getClass())) return exchange;
 
         String vname = p.getDeclaredAnnotation(Param.class).value();
         if (vname.length() > 0) {
             Field f0 = hasField(vname, o);
-            if (f0 == null) return null;
+            if (f0 == null) {
+                if (o.getClass().isAssignableFrom(p.getType())) return o;
+                return null;
+            }
             if (p.getType().isAssignableFrom(f0.getType())) {
                 return new Object[]{f0.get(o)};
             }
