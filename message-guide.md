@@ -13,7 +13,7 @@ The `@NoArgsConstructor` shows the serializer that a new object can be created w
 // EchoMessage class definition
 @Component(ord = 1)
 public int aNumber;
-//...
+//... 
 ```
 To specify a new message-field the `Component`-annotation is required. The ordinal number is used if `AllArgsConstructor` is specified. If so, the constructor-parameter at the position of this number has to be linked with this field.
 

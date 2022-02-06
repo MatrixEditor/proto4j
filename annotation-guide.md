@@ -6,11 +6,11 @@
 ![module-spec](https://img.shields.io:/static/v1?label=Package&message=de.proto4j.annotation.threading&color=9cf)
 
 Below all declared annotations with their descriptions are listed. Message related annotations can be
-found [here](https://github.com/MatrixEditor/proto4j/blob/readme-002/message-guide.md).
+found [here](https://github.com/MatrixEditor/proto4j/blob/main/message-guide.md).
 
 ### HTTP-Annotations
 
----
+--- 
 
 
 Annotations listed below are used to configure a simple HTTP-server. Do not use them anywhere else.

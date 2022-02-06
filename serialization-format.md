@@ -7,7 +7,7 @@ Below a small description of the serialization format of messages is provided. T
 ### Header
 
 ---
-The `Header` of the serialized message contains information about the message class and its constructor modifiers. The structure is as follows:
+The `Header` of the serialized message contains information about the message class and its constructor modifiers. The structure is as follows: 
 > package-name.ClassName::ClassName::Modifiers\n
 
 * `package-name`: the list of root-packages this class is declared in, for instance `a.b.c.[ClassName]`
@@ -17,7 +17,7 @@ The `Header` of the serialized message contains information about the message cl
 ### Body
 
 ---
-The `Body` consists of all fields from the message-class that are annotated with `@Component`. There are different options that can be enabled for every field. These options are explained in the [message-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/message-guide.md).
+The `Body` consists of all fields from the message-class that are annotated with `@Component`. There are different options that can be enabled for every field. These options are explained in the [message-guide](https://github.com/MatrixEditor/proto4j/blob/main/message-guide.md).
 
 Overall, the structure can be summarized to the following:
 > ord-[modifiers]-type-length-value-\r

@@ -34,11 +34,11 @@ public class MyController {
 }
 ```
 
-The code above indicates that a new context will be created at `"http://address/start/hello"` and a plain result is given as a response. Filtering by different HTTP-Methods is not implemented yet. Please refer to the [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/annotation-guide.md) to understand which annotation can be used in which context.
+The code above indicates that a new context will be created at `"http://address/start/hello"` and a plain result is given as a response. Filtering by different HTTP-Methods is not implemented yet. Please refer to the [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/main/annotation-guide.md) to understand which annotation can be used in which context.
 
 #### Create a new message-format
 
-Defining new types of messages is important for the own client-server infrastructure. See the [message-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/message-guide.md) to get more information.
+Defining new types of messages is important for the own client-server infrastructure. See the [message-guide](https://github.com/MatrixEditor/proto4j/blob/main/message-guide.md) to get more information.
 
 #### Create a client-server infrastructure
 
@@ -47,7 +47,7 @@ Three components are required to build a new infrastructure:
 * `server`: The server-backend with a class annotated as a `TypeServer`
 * `message`: At least one message has to be defined. Otherwise, no communication between client and endpoint is possible.
 
-See the [message-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/message-guide.md) to get more information about defining messages. The server-side is similar to the Webserver definition:
+See the [message-guide](https://github.com/MatrixEditor/proto4j/blob/main/message-guide.md) to get more information about defining messages. The server-side is similar to the Webserver definition:
 
 ```java
 @TypeServer(port = 9000)
@@ -67,9 +67,9 @@ public class ServerHandler {
 }
 ```
 
-The method `runServer(Class<?> c)` returns an instance of `TypeContext` which contains all environment information related to this server. Additional options with annotation are described [here](https://github.com/MatrixEditor/proto4j/blob/readme-002/annotation-guide.md).
+The method `runServer(Class<?> c)` returns an instance of `TypeContext` which contains all environment information related to this server. Additional options with annotation are described [here](https://github.com/MatrixEditor/proto4j/blob/main/annotation-guide.md).
 
-The client-side has a similar structure. There is a difference in configuration, because a client could connect to a number of server in parallel. For Annotation-related information refer to the [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/annotation-guide.md).
+The client-side has a similar structure. There is a difference in configuration, because a client could connect to a number of server in parallel. For Annotation-related information refer to the [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/main/annotation-guide.md).
 ```java
 @TypeClient
 public class MyClient { 
@@ -105,7 +105,7 @@ public static Object convert(byte[] data, Set<Class<?>> messageTypes); //de-seri
 ```
 Converting serialized data back into Objects is linked with security issues. Untrusted data should not be de-serialized. Therefore, a `java.util.Set` with all system-loaded message-types is provided. **Important:** This method should only be called by the Proto4jReader to prevent security issues and I/O-Errors.
 
-To understand which format is used in serialization, follow this [description](https://github.com/MatrixEditor/proto4j/blob/readme-002/serialization-format.md).
+To understand which format is used in serialization, follow this [description](https://github.com/MatrixEditor/proto4j/blob/main/serialization-format.md).
 
 ### proto4j-annotation
 
@@ -114,13 +114,13 @@ To understand which format is used in serialization, follow this [description](h
 This module contains almost every important annotation cor creating the client-server infrastructure. Only Annotations of package `de.proto4j.annotation.documentation` are source-related so they can't be viewed at runtime. 
 
 Below the packages and their usage are listed:
-* `http`: All Annotations declared in this package are used by an HTTP-Server. The basic processing of these annotations are explained in an extra [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/annotation-guide.md)
-* `message`: In order to declare new message formats annotations of this package are used. View this [message-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/message-guide.md) to get more information.
-* `server`: This package contains all server context-related annotations like the http-package. See [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/readme-002/annotation-guide.md) for more Information.
+* `http`: All Annotations declared in this package are used by an HTTP-Server. The basic processing of these annotations are explained in an extra [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/main/annotation-guide.md)
+* `message`: In order to declare new message formats annotations of this package are used. View this [message-guide](https://github.com/MatrixEditor/proto4j/blob/main/message-guide.md) to get more information.
+* `server`: This package contains all server context-related annotations like the http-package. See [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/main/annotation-guide.md) for more Information.
 * `threading`: Annotations that show a parallelism of a method as well as an implementation for a `ThreadPool`, that executes all incoming commands in a new Thread. 
 
 ### proto4j-internal
-
+ 
 ---
 
 The `internal`-module contains the implementations for `InputStream` and `OutputStream` named `Proto4jReader`and -`Writer`, a small Logger-Factory and utilities for scanning java-packages and bean-creation. Although, this module contains useful classes, these shouldn't be used outside this library.
