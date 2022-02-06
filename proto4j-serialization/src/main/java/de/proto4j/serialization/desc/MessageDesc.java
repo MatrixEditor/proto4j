@@ -1,6 +1,6 @@
 package de.proto4j.serialization.desc; //@date 31.01.2022
 
-import de.proto4j.DescProviderFactory;
+import de.proto4j.serialization.DescProviderFactory;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -33,7 +33,7 @@ public class MessageDesc extends Member implements ObjectDesc {
     public String serialize() throws IOException {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(getName()).append(DescProviderFactory.LF);
+        sb.append(getName()).append("::").append(getModifiers()).append(DescProviderFactory.LF);
         for (FieldDesc fd : getFields()) {
             sb.append(fd.serialize());
         }
@@ -51,7 +51,9 @@ public class MessageDesc extends Member implements ObjectDesc {
 
             if (i == 0) {
                 try {
-                    messageClass = Class.forName(s.split("[:][:]")[0]);
+                    String[] x = s.split("[:][:]");
+                    setModifiers(Integer.parseInt(x[2]));
+                    messageClass = Class.forName(x[0]);
                 } catch (ClassNotFoundException e) {
                     throw new IllegalCallerException("could not initialize messageClass");
                 }

@@ -1,6 +1,6 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
-import de.proto4j.DescProviderFactory;
+import de.proto4j.serialization.DescProviderFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;

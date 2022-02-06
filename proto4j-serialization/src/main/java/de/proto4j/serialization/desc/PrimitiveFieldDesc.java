@@ -1,6 +1,6 @@
 package de.proto4j.serialization.desc; //@date 31.01.2022
 
-import de.proto4j.DescProviderFactory;
+import de.proto4j.serialization.DescProviderFactory;
 import de.proto4j.serialization.mapping.Mapping;
 import de.proto4j.serialization.mapping.PrimitiveMappings;
 

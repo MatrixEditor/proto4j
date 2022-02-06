@@ -1,8 +1,8 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
-import de.proto4j.DescProviderFactory;
 import de.proto4j.annotation.documentation.Info;
 import de.proto4j.annotation.documentation.UnsafeOperation;
+import de.proto4j.serialization.DescProviderFactory;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -13,7 +13,7 @@ import java.nio.channels.SocketChannel;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-import static de.proto4j.DescProviderFactory.RF;
+import static de.proto4j.serialization.DescProviderFactory.RF;
 
 public class Proto4jWriter extends OutputStream {
     @UnsafeOperation

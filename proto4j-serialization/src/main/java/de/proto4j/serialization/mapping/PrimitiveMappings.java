@@ -1,6 +1,6 @@
 package de.proto4j.serialization.mapping; //@date 01.02.2022
 
-import de.proto4j.DescProviderFactory;
+import de.proto4j.serialization.DescProviderFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
