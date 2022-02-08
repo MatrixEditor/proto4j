@@ -1,14 +1,15 @@
 package de.proto4j.network.objects.server; //@date 28.01.2022
 
 import de.proto4j.annotation.server.requests.selection.Selector;
-import de.proto4j.internal.io.Proto4jReader;
-import de.proto4j.internal.io.Proto4jWriter;
 import de.proto4j.internal.logger.LogMessage;
 import de.proto4j.internal.logger.Logger;
 import de.proto4j.internal.logger.PrintColor;
 import de.proto4j.internal.logger.PrintService;
 import de.proto4j.internal.method.MethodLookup;
 import de.proto4j.network.objects.*;
+import de.proto4j.security.asymmetric.Proto4jAsymKeyProvider;
+import de.proto4j.security.cert.CertificateExchange;
+import de.proto4j.security.cert.CertificateSpec;
 
 import java.io.IOException;
 import java.lang.reflect.Parameter;
@@ -18,6 +19,9 @@ import java.net.SocketException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.security.KeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +42,9 @@ class ServerImpl {
 
     private final Dispatcher dispatcher;
 
+
+    private KeyPair         keyPair;
+    private CertificateSpec certificateSpec;
     private ExecutorService threadPool;
     private Executor        executor;
 
@@ -84,9 +91,17 @@ class ServerImpl {
         if (!bound || finished || started) throw new IllegalStateException("Wrong state for server!");
         if (executor == null && threadPool == null) throw new IllegalStateException("No executor defined!");
 
+        try {
+            keyPair         = Proto4jAsymKeyProvider.newProto4jKeyPair();
+            certificateSpec = Proto4jAsymKeyProvider.getInstance(keyPair.getPublic());
+        } catch (KeyException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("could not initialize keys");
+        }
+
         dispatcherThread = new Thread(null, dispatcher, "ObjectServer::Dispatcher", 0, false);
         started          = true;
         dispatcherThread.start();
+
         LOGGER.info(PrintColor.DARK_GREEN, LogMessage.simpleMessage("Server started!"));
     }
 
@@ -242,7 +257,7 @@ class ServerImpl {
             while (!finished) try {
                 if (terminating) continue;
 
-                chan  = ssChan.accept();
+                chan = ssChan.accept();
                 if (chan != null) {
                     chan.configureBlocking(true);
                     ObjectConnection oc = new ObjectConnection();
@@ -290,17 +305,28 @@ class ServerImpl {
 
         @Override
         public void run() {
+            CertificateExchange ce = new ServerCertificateExchange(chan, certificateSpec);
+            try {
+                ce.init();
+                CertificateSpec cert = ce.exchange();
+                if (cert == null) {
+                    //do log
+                    return;
+                }
+                connection.setRawInput(new ObjectReader(chan, getReadableMessages(), keyPair.getPrivate()));
+                connection.setRawOutput(new ObjectWriter(chan, keyPair.getPrivate()));
+
+            } catch (IOException | ClassNotFoundException e) {
+                //  log
+                return;
+            }
+
             while (!finished) {
                 if (terminating) continue;
                 ObjectContext<?> context = connection.getContext();
 
                 try {
-                    if (context == null) {
-                        connection.setRawInput(new Proto4jReader(chan, readableMessages));
-                        connection.setRawOutput(new Proto4jWriter(chan));
-                    }
-
-                    Object message = ((Proto4jReader) connection.getInputStream()).readMessage();
+                    Object message = ((ObjectReader) connection.getReader()).readMessage();
                     //find context
                     context = findContext(message);
                     if (context != null) {

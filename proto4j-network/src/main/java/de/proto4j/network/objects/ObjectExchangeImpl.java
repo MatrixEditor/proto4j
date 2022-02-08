@@ -20,7 +20,7 @@ public class ObjectExchangeImpl extends ObjectExchange {
     public ObjectExchangeImpl(ObjectConnection connection, Object message) {
         this.connection = connection;
         this.message    = message;
-        setStreams(connection.getInputStream(), connection.getOutputStream());
+        setStreams(connection.getReader(), connection.getWriter());
     }
 
     @Override

@@ -1,31 +1,16 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
-import de.proto4j.annotation.documentation.Info;
-import de.proto4j.annotation.documentation.UnsafeOperation;
-import de.proto4j.serialization.DescProviderFactory;
-
-import javax.crypto.*;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
-import static de.proto4j.serialization.DescProviderFactory.RF;
+public abstract class Proto4jWriter extends OutputStream {
 
-public class Proto4jWriter extends OutputStream {
-    @UnsafeOperation
-    @Info("will be generated at runtime in the future")
-    public static final byte[] SHARED_KEY = new byte[]{
-            37, 100, 79, 6, -99, 30, 78, 33, -44, 126, -34, 35, -126, 109, -101, 85
-    };
-    public static final String SHARED_CIPHER = "AES/ECB/PKCS5Padding";
     private final SocketChannel channel;
     private final byte[]        one;
-    private ByteBuffer buf;
-    private boolean    closed;
+    private       ByteBuffer    buf;
+    private       boolean       closed;
 
     public Proto4jWriter(SocketChannel chan) {
         if (chan == null) throw new NullPointerException();
@@ -36,31 +21,11 @@ public class Proto4jWriter extends OutputStream {
         buf    = ByteBuffer.allocate(4096);
     }
 
-    public synchronized void write(Object message) throws IOException {
-        if (closed) throw new IOException("stream is closed");
-
-        if (message == null) throw new NullPointerException("cannot write null-object");
-        try {
-            StringBuffer buf = DescProviderFactory.allocate(message);
-            if (buf.capacity() % 16 != 0) {
-                int cap = buf.capacity();
-                while (cap % 16 != 0) {
-                    buf.append(RF);
-                    cap++;
-                }
-            }
-            Cipher    c   = Cipher.getInstance(SHARED_CIPHER);
-            SecretKey key = new SecretKeySpec(SHARED_KEY, "AES");
-            c.init(Cipher.ENCRYPT_MODE, key);
-
-            byte[] bytes = c.doFinal(buf.toString().getBytes());
-            write(bytes);
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
-            // log
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
-            throw new IllegalStateException("could not write data!");
-        }
+    public boolean isClosed() {
+        return closed;
     }
+
+    public abstract void write(Object message) throws IOException;
 
     @Override
     public synchronized void write(int b) throws IOException {

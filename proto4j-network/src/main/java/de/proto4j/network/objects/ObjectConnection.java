@@ -1,17 +1,18 @@
 package de.proto4j.network.objects; //@date 28.01.2022
 
+import de.proto4j.internal.io.Proto4jReader;
+import de.proto4j.internal.io.Proto4jWriter;
+
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.channels.SocketChannel;
 
 public class ObjectConnection {
 
     private ObjectContext<?> context;
 
-    private InputStream  raw;
-    private OutputStream out; //raw
+    private Proto4jReader raw;
+    private Proto4jWriter out; //raw
 
     private SocketChannel chan;
 
@@ -21,7 +22,7 @@ public class ObjectConnection {
 
     private boolean closed = false;
 
-    public void setParameters(OutputStream rawOut, SocketChannel c, InputStream rawIn,
+    public void setParameters(Proto4jWriter rawOut, SocketChannel c, Proto4jReader rawIn,
                               ObjectContext<?> ctx) {
         this.chan = c;
         this.raw = rawIn;
@@ -58,11 +59,11 @@ public class ObjectConnection {
         }
     }
 
-    public InputStream getInputStream() {
+    public Proto4jReader getReader() {
         return raw;
     }
 
-    public OutputStream getOutputStream() {
+    public Proto4jWriter getWriter() {
         return out;
     }
 
@@ -70,11 +71,11 @@ public class ObjectConnection {
         return context;
     }
 
-    public void setRawInput(InputStream raw) {
+    public void setRawInput(Proto4jReader raw) {
         this.raw = raw;
     }
 
-    public void setRawOutput(OutputStream out) {
+    public void setRawOutput(Proto4jWriter out) {
         this.out = out;
     }
 

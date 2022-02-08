@@ -1,23 +1,14 @@
 package de.proto4j.internal.io; //@date 28.01.2022
 
-import de.proto4j.serialization.DescProviderFactory;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Proto4jReader extends InputStream {
+public abstract class Proto4jReader extends InputStream {
 
     public static final int BUF_SIZE = 8 * 1024;
 
@@ -43,26 +34,7 @@ public class Proto4jReader extends InputStream {
 
     }
 
-    public synchronized Object readMessage() throws IOException {
-        if (closed) throw new IOException("stream is closed");
-        ByteBuffer buffer = ByteBuffer.allocate(2048);
-
-        int len = read(buffer.array());
-        try {
-            byte[] encrypted = new byte[len];
-            System.arraycopy(buffer.array(), 0, encrypted, 0, len);
-            Cipher cipher = Cipher.getInstance(Proto4jWriter.SHARED_CIPHER);
-            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Proto4jWriter.SHARED_KEY, "AES"));
-
-            byte[] decrypted = cipher.doFinal(encrypted);
-            return DescProviderFactory.convert(decrypted, readable);
-        } catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
-            //log
-        } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+    public abstract Object readMessage() throws IOException;
 
     @Override
     public synchronized int read(byte[] b) throws IOException {
@@ -139,5 +111,9 @@ public class Proto4jReader extends InputStream {
 
     public Set<Class<?>> getReadable() {
         return readable;
+    }
+
+    protected boolean isClosed() {
+        return closed;
     }
 }

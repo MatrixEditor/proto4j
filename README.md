@@ -5,7 +5,7 @@
 ![GitHub stars](https://img.shields.io/github/stars/matrixeditor/proto4j?style=flat)
 ![GitHub forks](https://img.shields.io/github/forks/matrixeditor/proto4j?style=flat)
 
-This project contains a fully implemented client-server infrastructure controlled by Java-Annotations. Serialization is done with AES-Encryption and a http-server based on SUN-Webserver is also delivered.
+This project contains a fully implemented client-server infrastructure controlled by Java-Annotations. Serialization is done with AES-Encryption and an http-server based on SUN-Webserver is also delivered.
 
 ## Prerequisites
 
@@ -21,8 +21,10 @@ Take a look at the **dev-001** branch and see the examples of http-server and a 
 Below a list of individual guides to specific topics of this project is given:
 * [general-guide](https://github.com/MatrixEditor/proto4j/blob/main/guide.md)
 * [message-guide](https://github.com/MatrixEditor/proto4j/blob/main/message-guide.md)
-* [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/rmain/annotation-guide.md)
+* [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/main/annotation-guide.md)
 * [serialization-format](https://github.com/MatrixEditor/proto4j/blob/main/serialization-format.md)
+
+Updates are collected in [this](https://github.com/MatrixEditor/proto4j/blob/main/updates.md) small sheet.
 
 ## Contributing
 

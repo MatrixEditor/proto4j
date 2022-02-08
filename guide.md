@@ -93,6 +93,21 @@ public class MyController {
 
 Yet, the library consists of five modules:
 
+### proto4j-security
+
+---
+
+In order to prevent everyone can read the traffic sent through the network the RSA encryption method is used. If a client connects to the specified server a `CerticicateExchange` is done by both server and client. The backend only sends his public-key and continues. The client waits until it receives the generated public key. 
+
+To ensure keys are not known before the client or server have been started, they are generated at runtime with calling the following method in `Proto4jAsymKeyProvider`: 
+
+```java
+public static synchronized KeyPair newProto4jKeyPair();
+```
+
+The default `key.length` is defined with 1024.
+
+
 ### proto4j-serialization 
 
 ---
@@ -111,7 +126,7 @@ To understand which format is used in serialization, follow this [description](h
 
 ---
 
-This module contains almost every important annotation cor creating the client-server infrastructure. Only Annotations of package `de.proto4j.annotation.documentation` are source-related so they can't be viewed at runtime. 
+This module contains almost every important annotation cor creating the client-server infrastructure. Only Annotations of package `de.proto4j.annotation.documentation` are source-related, so they can't be viewed at runtime. 
 
 Below the packages and their usage are listed:
 * `http`: All Annotations declared in this package are used by an HTTP-Server. The basic processing of these annotations are explained in an extra [annotation-guide](https://github.com/MatrixEditor/proto4j/blob/main/annotation-guide.md)

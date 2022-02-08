@@ -6,6 +6,8 @@ import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
 import de.proto4j.internal.method.MethodLookup;
 import de.proto4j.network.objects.*;
+import de.proto4j.security.cert.CertificateExchange;
+import de.proto4j.security.cert.CertificateSpec;
 
 import java.io.IOException;
 import java.lang.reflect.Parameter;
@@ -21,19 +23,18 @@ import java.util.concurrent.ExecutorService;
 class ClientImpl {
 
     private final Map<SocketChannel, ObjectConnection> connections = new Hashtable<>();
+    private final List<ObjectContext<SelectorContext>> contexts    = new LinkedList<>();
 
-    private final List<Class<?>>                       messageTypes = new LinkedList<>();
-    private final List<ObjectContext<SelectorContext>> contexts     = new LinkedList<>();
+    private final List<Class<?>> messageTypes = new LinkedList<>();
+    private final List<String>   configuration;
 
     private final ObjectClient wrapper;
-    private final List<String> configuration;
 
     private volatile boolean finished    = false;
     private volatile boolean terminating = false;
 
     private ExecutorService service;
-    private Thread          dispatcherThread;
-
+    private CertificateSpec certificateSpec;
 
     public ClientImpl(ObjectClient client, List<String> conf) throws IOException {
         configuration = conf;
@@ -84,14 +85,6 @@ class ClientImpl {
             }
         }
         finished = true;
-        if (dispatcherThread != null) {
-            try {
-                dispatcherThread.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                //log
-            }
-        }
         if (service != null) {
             if (!service.isTerminated()) {
                 service.shutdownNow();
@@ -99,7 +92,8 @@ class ClientImpl {
         }
     }
 
-    public synchronized ObjectContext<SelectorContext> createContext(Parameter[] parameters, ObjectContext.Handler handler) {
+    public synchronized ObjectContext<SelectorContext> createContext(Parameter[] parameters,
+                                                                     ObjectContext.Handler handler) {
         if (parameters == null || handler == null) {
             throw new NullPointerException("Mapping or Handler == null");
         }
@@ -201,23 +195,39 @@ class ClientImpl {
 
     private final class Dispatcher implements Runnable {
 
-        private final Proto4jReader rin;
-        private final Proto4jWriter rout;
-        private final SocketChannel channel;
+        private final SocketChannel    channel;
         private final ObjectConnection conn;
+        private       Proto4jReader    rin;
+        private       Proto4jWriter    rout;
 
         public Dispatcher(SocketChannel channel) {
-            rin          = new Proto4jReader(channel, getMessageTypes());
-            rout         = new Proto4jWriter(channel);
             this.channel = channel;
 
             conn = new ObjectConnection();
-            conn.setParameters(rout, channel, rin, null);
-            connections.put(channel, conn);
         }
 
         @Override
         public void run() {
+            CertificateExchange ce = new ClientCertificateExchange(channel);
+            try {
+                ce.init();
+                CertificateSpec cert = ce.exchange();
+                if (cert == null) {
+                    //do log
+                    return;
+                }
+                certificateSpec = cert;
+                rin          = new ObjectReader(channel, getMessageTypes(), certificateSpec.getPublicKey());
+                rout         = new ObjectWriter(channel, certificateSpec.getPublicKey());
+
+                conn.setParameters(rout, channel, rin, null);
+                connections.put(channel, conn);
+            } catch (IOException | ClassNotFoundException e) {
+                //  log
+                return;
+            }
+
+
             if (configuration.contains(Configuration.BY_CONNECTION)) {
                 if (!finished && channel.isConnected()) {
                     SocketAddress remote;
