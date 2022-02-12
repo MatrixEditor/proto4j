@@ -1,12 +1,8 @@
-package de.proto4j.serialization; //@date 31.01.2022
+package de.proto4j.serialization.desc; //@date 31.01.2022
 
 import de.proto4j.annotation.message.AllArgsConstructor;
 import de.proto4j.annotation.message.Component;
 import de.proto4j.annotation.message.PacketModifier;
-import de.proto4j.serialization.desc.FieldDesc;
-import de.proto4j.serialization.desc.MessageDesc;
-import de.proto4j.serialization.desc.PrimitiveFieldDesc;
-import de.proto4j.serialization.desc.RepeatedFieldDesc;
 import de.proto4j.serialization.mapping.PrimitiveMappings;
 
 import java.io.IOException;

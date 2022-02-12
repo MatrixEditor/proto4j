@@ -1,205 +1,184 @@
 package de.proto4j.network.objects.client; //@date 29.01.2022
 
-import de.proto4j.annotation.message.Message;
-import de.proto4j.annotation.server.Configuration;
-import de.proto4j.annotation.server.TypeClient;
-import de.proto4j.annotation.server.requests.ConnectionHandler;
-import de.proto4j.annotation.server.requests.Controller;
-import de.proto4j.annotation.server.requests.RequestHandler;
-import de.proto4j.annotation.server.requests.ResponseBody;
+import de.proto4j.annotation.AnnotationLookup;
+import de.proto4j.annotation.Markup;
 import de.proto4j.annotation.server.requests.selection.FirstParameterSelector;
 import de.proto4j.annotation.server.requests.selection.Selector;
-import de.proto4j.annotation.threding.*;
-import de.proto4j.internal.io.Proto4jWriter;
-import de.proto4j.internal.logger.Logger;
-import de.proto4j.internal.logger.PrintColor;
-import de.proto4j.internal.logger.PrintService;
-import de.proto4j.internal.method.MethodLookup;
-import de.proto4j.internal.model.Reflections;
+import de.proto4j.annotation.threding.DirectThreadPool;
+import de.proto4j.internal.Packages;
 import de.proto4j.internal.model.bean.BeanManager;
+import de.proto4j.internal.model.bean.BeanManaging;
 import de.proto4j.internal.model.bean.MapBeanManager;
+import de.proto4j.internal.model.bean.SimpleBeanCache;
+import de.proto4j.network.EnvironmentBuilder;
 import de.proto4j.network.objects.*;
+import de.proto4j.stream.InterruptedStream;
+import de.proto4j.stream.SequenceStream;
+import de.proto4j.stream.Streams;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+
+import static de.proto4j.annotation.AnnotationLookup.*;
 
 public final class ClientProvider {
-
-    public static ClientContext createClient(Class<?> mainClass) {
-        if (mainClass == null) throw new NullPointerException("main-class can not be null");
-
-        if (!mainClass.isAnnotationPresent(TypeClient.class))
-            throw new IllegalArgumentException("Main-class is not a client");
-
-        List<String> conf = new LinkedList<>();
-
-
-        BeanManager manager = new MapBeanManager();
-
-        Set<Class<?>> beans = Reflections.getClassesFromMain(mainClass);
-        if (Configuration.Lookup.areValuesIgnored(mainClass)) {
-            conf.add(Configuration.IGNORE_VALUES);
-            Reflections.removeNonMessageClasses(mainClass, beans);
-        }
-
-        conf.add(Configuration.Lookup.isByConnection(mainClass) ? Configuration.BY_CONNECTION : Configuration.BY_VALUE);
-
-        for (Class<?> c : Reflections.findByAnnotationAsSet(beans, x -> {
-            return x.isAnnotationPresent(Controller.class);
-        })) {
-            manager.mapIfAbsent(c, Controller.class);
-        }
-
-        Set<Class<?>> messageTypes =
-                Reflections.findByAnnotationAsSet(beans, c -> c.isAnnotationPresent(Message.class));
-
-        ObjectClient client;
-        try {
-            client = ObjectClient.create();
-        } catch (IOException e) {
-            throw new IllegalStateException("couldn't create client: " + e.getMessage(), e);
-        }
-        client.getMessageTypes().addAll(messageTypes);
-
-        if (mainClass.isAnnotationPresent(ThreadPooling.class)) {
-            conf.add("threadPooling");
-
-            ThreadPooling es = mainClass.getDeclaredAnnotation(ThreadPooling.class);
-            try {
-                ExecutorService e;
-                if (es.parallelism() == -1) e = es.poolType().getDeclaredConstructor().newInstance();
-                else e = es.poolType().getDeclaredConstructor(int.class).newInstance(es.parallelism());
-
-                client.setThreadPool(e);
-            } catch (ReflectiveOperationException ex) {/**/}
-        } else client.setThreadPool(new ForkJoinPool());
-
-        manager.findAll(Controller.class).iterator().forEachRemaining(c -> {
-            for (Method m : c.getMappedClass().getDeclaredMethods()) {
-                if (Modifier.isStatic(m.getModifiers())) continue;
-
-                if ((conf.contains(Configuration.BY_CONNECTION) && m.isAnnotationPresent(ConnectionHandler.class))
-                        || m.isAnnotationPresent(RequestHandler.class)) {
-                    Class<? extends Selector> s;
-                    if (m.isAnnotationPresent(RequestHandler.class))
-                        s = m.getDeclaredAnnotation(RequestHandler.class).selectorType();
-                    else s = AddressSelector.class;
-
-                    ContextCache          cc  = new ContextCache(m, c.getInstance(), s, c.getMappedClass());
-                    InternalClientHandler ich = new InternalClientHandler(cc, client);
-                    if (s == FirstParameterSelector.class) {
-
-                        Selector inst = new FirstParameterSelector(m.getParameterTypes()[0]);
-                        client.createContext(inst, ich);
-                    } else if (s == AddressSelector.class) {
-
-                        Controller con = c.getMappedClass().getDeclaredAnnotation(Controller.class);
-                        if (con.value().length() == 0) client.createContext(cc.getSelectorType(), ich);
-                        else {
-                            Selector selector = new AddressSelector(con.value());
-                            client.createContext(selector, ich);
-                        }
-                    } else if (s == Selector.class) {
-                        client.createContext(m.getParameters(), ich);
-                    } else client.createContext(cc.getSelectorType(), ich);
-                }
-            }
-        });
-
-        client.getConfiguration().addAll(conf);
-
-        // this method actually has no side effects -> there are only a few
-        // checks that has to be done to make sure no errors would display.
-        client.start();
-        return new ClientContext(client, manager, beans, mainClass, conf);
-
-    }
 
     public static ObjectConnection getConnection(String host, ObjectClient client) {
         Collection<ObjectConnection> c = client.getAllConnections();
         if (c.size() == 0) return null;
 
         return c.stream().filter(oc -> ((InetSocketAddress) oc.getChannel().socket().getRemoteSocketAddress())
-                .getAddress().getHostAddress().equals(host))
+                        .getAddress().getHostAddress().equals(host))
                 .findFirst()
                 .orElse(null);
     }
 
-    private static class InternalClientHandler implements ObjectContext.Handler {
+    public static ClientContext createClient(Class<?> mainClass) {
+        Objects.requireNonNull(mainClass);
+        Markup.requireTypeClient(mainClass);
 
-        private static final Logger logger = PrintService.createLogger(InternalClientHandler.class);
+        EnvironmentBuilder builder = new ObjectClientEnvBuilder(mainClass);
 
-        private final ContextCache cache;
-        private final ObjectClient client;
+        ObjectClient client = builder.buildBase();
+        BeanManager  bm     = builder.buildManager();
 
-        private InternalClientHandler(ContextCache cache, ObjectClient client) {
-            this.cache  = cache;
-            this.client = client;
+        builder.buildConfiguration();
+        builder.buildBeans(AnnotationLookup.ConfigurationLookup.areValuesIgnored(mainClass));
+
+        builder.buildThreadPool(mainClass);
+        builder.iterCaches(bm.findAll(BeanManaging::filterController), builder.buildInterrupted());
+
+        client.start();
+        return (ClientContext) builder.finish();
+    }
+
+    public static class ObjectClientEnvBuilder implements EnvironmentBuilder {
+
+        private final List<String> conf = new LinkedList<>();
+
+        private final Class<?> main;
+
+        private ObjectClient oc;
+        private BeanManager  bm;
+
+        private SequenceStream<Class<?>> classes;
+
+        public ObjectClientEnvBuilder(Class<?> main) {this.main = main;}
+
+        @Override
+        public BeanManager buildManager() {
+            bm = new MapBeanManager();
+            return bm;
         }
 
         @Override
-        public void handle(ObjectExchange exchange) {
-            if (exchange == null || cache == null || client == null) return;
-
-            Method m = cache.getMethod();
-
-            Object response = null;
-            boolean fromParallel = m.isAnnotationPresent(Parallel.class)
-                    || m.isAnnotationPresent(SupplyParallel.class);
-
-            Object[] args;
-            if (m.getParameterCount() == 1 && ObjectExchange.class.isAssignableFrom(m.getParameters()[0].getType())) {
-                args = new Object[]{exchange};
-            } else {
-                try {
-                    args = MethodLookup.tryCreate(exchange.getMessage(), exchange, m.getParameters());
-                } catch (IllegalAccessException e) {
-                    logger.except(PrintColor.DARK_RED, e);
-                    return;
-                }
+        public ObjectClient buildBase() {
+            try {
+                oc = ObjectClient.create();
+            } catch (IOException e) {
+                throw new IllegalStateException(e.getMessage());
             }
-
-            if (!fromParallel) {
-                response = invokeMethod(args, m);
-            } else {
-                if (m.isAnnotationPresent(Parallel.class)) {
-                    ParallelExecutor pe = Threads.newParallelThreadExecutor();
-                    pe.execute(() -> invokeMethod(args, m));
-                } else {
-                    ParallelSupplier ps = Threads.newSingleThreadSupplier();
-                    response = ps.supplyAsync(() -> invokeMethod(args, m));
-                }
-            }
-            if (m.isAnnotationPresent(ConnectionHandler.class)) return;
-
-            if (m.isAnnotationPresent(ResponseBody.class)) {
-                if (response != null && client.getMessageTypes().contains(response.getClass())) {
-                    try {
-                        Proto4jWriter w = (Proto4jWriter) exchange.getResponseBody();
-                        w.write(response);
-                    } catch (IOException e) {
-                        logger.except(PrintColor.DARK_RED, e);
-                    }
-                }
-            }
+            return oc;
         }
 
-        private Object invokeMethod(Object[] args, Method m) {
-            try {
-                return m.invoke(cache.getInvoker(), args);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                logger.except(PrintColor.DARK_RED, e);
+        @Override
+        public void buildConfiguration() {
+            conf.add(AnnotationLookup.ConfigurationLookup.isByConnection(main) ? CONF_BY_CONNECTION : CONF_BY_VALUE);
+        }
+
+        @Override
+        public SequenceStream<Class<?>> buildBeans(boolean ignoreValues) {
+            SequenceStream<Class<?>> stream = Packages.readClasses(main, true);
+
+            if (ignoreValues) {
+                stream = stream.slice(Packages.getPackageFilter(main));
+                conf.add(CONF_IGNORE_VALUES);
             }
-            return null;
+
+            stream.slice(Markup::isController).forEach(x -> BeanManaging.mapController(bm, x));
+            stream.slice(Markup::isMessage).forEach(oc.getMessageTypes()::add);
+
+            classes = stream;
+            return stream;
+        }
+
+        @Override
+        public InterruptedStream<SimpleBeanCache> buildInterrupted() {
+            InterruptedStream<SimpleBeanCache> is = Streams.prepareInterruptedStream();
+            is.forEach(x -> buildContext(x, oc));
+            return is;
+        }
+
+        @Override
+        public void buildContext(SimpleBeanCache cache, ObjectClient ref) {
+            buildRequestHandlers(cache.getMappedClass(), AnnotationLookup.HandlerLookup::isServerRequestHandler)
+                    .forEach(m -> buildHandler(m, ref, cache));
+        }
+
+        @Override
+        public ObjectContext.Handler buildHandler(Method m, ObjectClient oc, SimpleBeanCache sbc) {
+            Class<? extends Selector> s = getSelectorType(m);
+
+            ContextCache cc = new ContextCache(m, sbc.getInstance(), s, sbc.getMappedClass());
+            ObjectContext.Handler handler = new InternalObjectHandler(cc, oc);
+
+            if (s == FirstParameterSelector.class) {
+                Selector inst = new FirstParameterSelector(m.getParameterTypes()[0]);
+                oc.createContext(inst, handler);
+            } else if (s == AddressSelector.class) {
+
+                String path = Markup.getControllerMarkup(sbc.getMappedClass()).value();
+                if (path.length() == 0) oc.createContext(cc.getSelectorType(), handler);
+                else {
+                    Selector selector = new AddressSelector(path);
+                    oc.createContext(selector, handler);
+                }
+            } else if (s == Selector.class) {
+                oc.createContext(m.getParameters(), handler);
+            } else oc.createContext(cc.getSelectorType(), handler);
+            return handler;
+        }
+
+        @Override
+        public ExecutorService buildThreadPool(Class<?> c) {
+            if (!Markup.isThreadPooling(c)) {
+                ExecutorService e = new DirectThreadPool();
+                oc.setThreadPool(e);
+                return e;
+            }
+            Markup.requireThreadPooling(c);
+            Class<? extends ExecutorService> exec = Markup.getThreadPoolingMarkup(c).poolType();
+
+            int parallelism = Markup.getThreadPoolingMarkup(c).parallelism();
+
+            ExecutorService e = null;
+            try {
+
+                if (parallelism == -1) e = exec.getDeclaredConstructor().newInstance();
+                else e = exec.getDeclaredConstructor(int.class).newInstance(parallelism);
+
+                oc.setThreadPool(e);
+            } catch (ReflectiveOperationException ex) {/**/}
+            return e;
+        }
+
+        @Override
+        public TypeContext finish() {
+            return new ClientContext(oc, bm, classes, main, conf);
+        }
+
+        private Class<? extends Selector> getSelectorType(Method m) {
+            Class<? extends Selector> s;
+            if (Markup.isRequestHandler(m)) s = Markup.getRequestHandlerMarkup(m).selectorType();
+            else s = AddressSelector.class;
+            return s;
         }
     }
+
 }

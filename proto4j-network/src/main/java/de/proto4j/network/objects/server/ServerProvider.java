@@ -1,163 +1,158 @@
 package de.proto4j.network.objects.server; //@date 29.01.2022
 
-import de.proto4j.annotation.message.Message;
-import de.proto4j.annotation.server.TypeServer;
-import de.proto4j.annotation.server.requests.Controller;
-import de.proto4j.annotation.server.requests.RequestHandler;
-import de.proto4j.annotation.server.requests.ResponseBody;
+import de.proto4j.annotation.AnnotationLookup;
+import de.proto4j.annotation.Markup;
 import de.proto4j.annotation.server.requests.selection.FirstParameterSelector;
 import de.proto4j.annotation.server.requests.selection.Selector;
-import de.proto4j.annotation.threding.*;
-import de.proto4j.internal.io.Proto4jWriter;
-import de.proto4j.internal.logger.Logger;
-import de.proto4j.internal.logger.PrintColor;
-import de.proto4j.internal.logger.PrintService;
-import de.proto4j.internal.method.MethodLookup;
-import de.proto4j.internal.model.Reflections;
+import de.proto4j.internal.Packages;
 import de.proto4j.internal.model.bean.BeanManager;
+import de.proto4j.internal.model.bean.BeanManaging;
 import de.proto4j.internal.model.bean.MapBeanManager;
+import de.proto4j.internal.model.bean.SimpleBeanCache;
+import de.proto4j.network.EnvironmentBuilder;
 import de.proto4j.network.objects.ContextCache;
+import de.proto4j.network.objects.InternalObjectHandler;
 import de.proto4j.network.objects.ObjectContext;
-import de.proto4j.network.objects.ObjectExchange;
 import de.proto4j.network.objects.TypeContext;
+import de.proto4j.network.objects.client.ObjectClient;
+import de.proto4j.stream.InterruptedStream;
+import de.proto4j.stream.SequenceStream;
+import de.proto4j.stream.Streams;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 
 public final class ServerProvider {
 
-    public static TypeContext runServer(Class<?> mainClass) throws IOException {
-        if (mainClass == null) throw new NullPointerException("main-class can not be null");
+    public static TypeContext runServer(Class<?> mainClass) {
+        Objects.requireNonNull(mainClass);
+        Markup.requireTypeServer(mainClass);
 
-        if (!mainClass.isAnnotationPresent(TypeServer.class))
-            throw new IllegalArgumentException("mainClass is not a type-server");
+        final int port    = Markup.getTypeServerMarkup(mainClass).port();
+        boolean   pooling = Markup.isThreadPooling(mainClass);
 
-        final int port    = mainClass.getDeclaredAnnotation(TypeServer.class).port();
-        boolean   pooling = mainClass.isAnnotationPresent(ThreadPooling.class);
+        EnvironmentBuilder builder = new ObjectServerEnvBuilder(pooling, port, mainClass);
 
-        ObjectServer server = ObjectServer.create(new InetSocketAddress(port), 0);
+        ObjectServer os = (ObjectServer) builder.buildBase();
+        BeanManager  bm = builder.buildManager();
 
-        BeanManager   manager = new MapBeanManager();
-        Set<Class<?>> beans   = Reflections.getClassesFromMain(mainClass);
-        Reflections.removeNonMessageClasses(mainClass, beans);
+        builder.buildBeans();
+        builder.iterCaches(bm.findAll(BeanManaging::filterController), builder.buildInterrupted());
+        builder.buildThreadPool(mainClass);
 
-        for (Class<?> cont : Reflections.findByAnnotationAsSet(beans, c -> {
-            return c.isAnnotationPresent(Controller.class);
-        })) {
-            manager.mapIfAbsent(cont, Controller.class);
-        }
-
-        Reflections.findByAnnotationAsSet(beans, c -> {
-            return c.isAnnotationPresent(Message.class);
-        }).forEach(server.getMessageTypes()::add);
-
-        manager.findAll(Controller.class).iterator().forEachRemaining(e -> {
-            for (Method m : e.getMappedClass().getDeclaredMethods()) {
-                if (Modifier.isStatic(m.getModifiers())) continue;
-
-                if (m.isAnnotationPresent(RequestHandler.class)) {
-                    Class<? extends Selector> s = m.getDeclaredAnnotation(RequestHandler.class).selectorType();
-
-                    ContextCache cc = new ContextCache(m, e.getInstance(), s, e.getMappedClass());
-
-                    InternalServerHandler ish = new InternalServerHandler(cc, server);
-                    if (s == FirstParameterSelector.class) {
-                        Selector inst = new FirstParameterSelector(m.getParameterTypes()[0]);
-                        server.createContext(inst, ish);
-                    } else if (s == Selector.class) {
-                      server.createContext(m.getParameters(), ish);
-                    } else server.createContext(cc.getSelectorType(), ish);
-                }
-            }
-        });
-
-        if (pooling) {
-            ThreadPooling es = mainClass.getDeclaredAnnotation(ThreadPooling.class);
-            try {
-                ExecutorService e;
-                if (es.parallelism() == -1) e = es.poolType().getDeclaredConstructor().newInstance();
-                else e = es.poolType().getDeclaredConstructor(int.class).newInstance(es.parallelism());
-
-                server.setThreadPool(e);
-            } catch (ReflectiveOperationException ex) {/**/}
-        } else server.setExecutor(Executors.newSingleThreadExecutor());
-
-        server.start();
-        return new ServerContextImpl(server, manager, beans, mainClass);
+        os.start();
+        return builder.finish();
     }
 
+    public static class ObjectServerEnvBuilder implements EnvironmentBuilder {
 
-    private static class InternalServerHandler implements ObjectContext.Handler {
+        private final boolean pooling;
+        private final int     port;
 
-        private static final Logger logger = PrintService.createLogger(InternalServerHandler.class);
+        private final Class<?> main;
 
-        private final ContextCache cache;
-        private final ObjectServer server;
+        private BeanManager              manager;
+        private ObjectServer             server;
+        private SequenceStream<Class<?>> classes;
 
-        private InternalServerHandler(ContextCache cache, ObjectServer server) {
-            this.cache  = cache;
-            this.server = server;
+        public ObjectServerEnvBuilder(boolean pooling, int port, Class<?> main) {
+            this.pooling = pooling;
+            this.port    = port;
+            this.main    = main;
         }
 
         @Override
-        public void handle(ObjectExchange exchange) {
-            if (exchange == null || cache == null || server == null) return;
-
-            Method m = cache.getMethod();
-
-            Object response = null;
-            boolean fromParallel = m.isAnnotationPresent(Parallel.class)
-                    || m.isAnnotationPresent(SupplyParallel.class);
-
-            Object[] args;
-            if (m.getParameterCount() == 1 && ObjectExchange.class.isAssignableFrom(m.getParameters()[0].getType())) {
-                args = new Object[]{exchange};
-            } else {
-                try {
-                    args = MethodLookup.tryCreate(exchange.getMessage(), exchange, m.getParameters());
-                } catch (IllegalAccessException e) {
-                    //log
-                    return;
-                }
-            }
-
-            if (!fromParallel) {
-                response = invokeMethod(args, m);
-            } else {
-                if (m.isAnnotationPresent(Parallel.class)) {
-                    ParallelExecutor pe = Threads.newParallelThreadExecutor();
-                    pe.execute(() -> invokeMethod(args, m));
-                } else {
-                    ParallelSupplier ps = Threads.newSingleThreadSupplier();
-                    response = ps.supplyAsync(() -> invokeMethod(args, m));
-                }
-            }
-            if (m.isAnnotationPresent(ResponseBody.class)) {
-                // this check prevents exceptions to be thrown from the underlying Proto4jWriter.
-                if (response != null && server.getMessageTypes().contains(response.getClass())) {
-                    try {
-                        Proto4jWriter w = (Proto4jWriter) exchange.getResponseBody();
-                        w.write(response);
-                    } catch (IOException e) {
-                        logger.except(PrintColor.DARK_RED, e);
-                    }
-                }
-            }
+        public BeanManager buildManager() {
+            manager = new MapBeanManager();
+            return manager;
         }
 
-        private Object invokeMethod(Object[] args, Method m) {
+        @Override
+        public ObjectClient buildBase() {
             try {
-                return m.invoke(cache.getInvoker(), args);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                logger.except(PrintColor.DARK_RED, e);
+                server = ObjectServer.create(new InetSocketAddress(port), 0);
+            } catch (IOException e) {
+                throw new IllegalStateException(e.getMessage());
             }
-            return null;
+            return server;
+        }
+
+        @Override
+        public SequenceStream<Class<?>> buildBeans(boolean ignoreValues) {
+            SequenceStream<Class<?>> stream = Packages.readClasses(main, true);
+
+            if (ignoreValues) {
+                stream = stream.slice(Packages.getPackageFilter(main));
+            }
+
+            stream.slice(Markup::isController).forEach(c -> BeanManaging.mapController(manager, c));
+            stream.slice(Markup::isMessage).forEach(server.getMessageTypes()::add);
+            classes = stream;
+            return stream;
+        }
+
+        @Override
+        public InterruptedStream<SimpleBeanCache> buildInterrupted() {
+            InterruptedStream<SimpleBeanCache> is = Streams.prepareInterruptedStream();
+            is.forEach(x -> buildContext(x, server));
+            return is;
+        }
+
+        @Override
+        public void buildContext(SimpleBeanCache cache, ObjectClient ref) {
+            buildRequestHandlers(cache.getMappedClass(), AnnotationLookup.HandlerLookup::isServerRequestHandler)
+                    .forEach(m -> buildHandler(m, ref, cache));
+        }
+
+        @Override
+        public ObjectContext.Handler buildHandler(Method m, ObjectClient oc, SimpleBeanCache sbc) {
+            Markup.requireRequestHandler(m);
+            Class<? extends Selector> s = Markup.getRequestHandlerMarkup(m).selectorType();
+
+            ContextCache cc = new ContextCache(m, sbc.getInstance(), s, sbc.getMappedClass());
+
+            ObjectContext.Handler handler = new InternalObjectHandler(cc, server);
+            if (s == FirstParameterSelector.class) {
+                Selector inst = new FirstParameterSelector(m.getParameterTypes()[0]);
+                server.createContext(inst, handler);
+            } else if (s == Selector.class) {
+                server.createContext(m.getParameters(), handler);
+            } else server.createContext(cc.getSelectorType(), handler);
+            return handler;
+        }
+
+        @Override
+        public ExecutorService buildThreadPool(Class<?> c) {
+            if (!pooling) {
+                ExecutorService e = new ForkJoinPool();
+                server.setThreadPool(e);
+                return e;
+            }
+            Markup.requireThreadPooling(c);
+            Class<? extends ExecutorService> exec = Markup.getThreadPoolingMarkup(c).poolType();
+
+            int parallelism = Markup.getThreadPoolingMarkup(c).parallelism();
+
+            ExecutorService e = null;
+            try {
+
+                if (parallelism == -1) e = exec.getDeclaredConstructor().newInstance();
+                else e = exec.getDeclaredConstructor(int.class).newInstance(parallelism);
+
+                server.setThreadPool(e);
+            } catch (ReflectiveOperationException ex) {/**/}
+            return e;
+        }
+
+        @Override
+        public TypeContext finish() {
+            return new ServerContextImpl(server, manager, classes, main);
         }
     }
 
@@ -167,11 +162,14 @@ public final class ServerProvider {
         private final Set<Class<?>> classes;
         private final Class<?>      main;
 
-        private ServerContextImpl(ObjectServer server, BeanManager manager, Set<Class<?>> classes, Class<?> main) {
+        private ServerContextImpl(ObjectServer server, BeanManager manager, SequenceStream<Class<?>> stream,
+                                  Class<?> main) {
             this.server  = server;
             this.manager = manager;
-            this.classes = classes;
+            this.classes = new HashSet<>();
             this.main    = main;
+
+            stream.forEach(classes::add);
         }
 
         public ObjectServer getServer() {

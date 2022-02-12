@@ -1,6 +1,5 @@
 package de.proto4j.serialization.desc; //@date 31.01.2022
 
-import de.proto4j.serialization.DescProviderFactory;
 import de.proto4j.serialization.mapping.ArrayMappings;
 import de.proto4j.serialization.mapping.CollectionMappings;
 import de.proto4j.serialization.mapping.Mapping;

@@ -1,7 +1,6 @@
-package de.proto4j.serialization; //@date 04.02.2022
+package de.proto4j.serialization.desc; //@date 04.02.2022
 
-import de.proto4j.serialization.desc.FieldDesc;
-import de.proto4j.serialization.desc.ObjectDesc;
+import de.proto4j.serialization.Serializer;
 
 import java.io.IOException;
 

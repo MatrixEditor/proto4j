@@ -1,7 +1,5 @@
 package de.proto4j.serialization.desc; //@date 31.01.2022
 
-import de.proto4j.serialization.DescProviderFactory;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,7 +10,7 @@ public class MessageDesc extends Member implements ObjectDesc {
     private final List<FieldDesc> fields = new LinkedList<>();
     private Class<?>              messageClass;
 
-    public List<FieldDesc> getFields() {
+    List<FieldDesc> getFields() {
         return fields;
     }
 

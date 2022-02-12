@@ -1,19 +1,21 @@
 package de.prototest.echo.client; //@date 30.01.2022
 
+import de.proto4j.annotation.AnnotationLookup;
 import de.proto4j.annotation.server.Configuration;
 import de.proto4j.annotation.server.TypeClient;
 import de.proto4j.network.objects.ObjectConnection;
 import de.proto4j.network.objects.client.ClientContext;
 import de.proto4j.network.objects.client.ClientProvider;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 
 @TypeClient
-@Configuration({Configuration.BY_CONNECTION, Configuration.IGNORE_VALUES})
+@Configuration({AnnotationLookup.CONF_BY_CONNECTION, AnnotationLookup.CONF_IGNORE_VALUES})
 public class EchoClient {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         ClientContext ctx = ClientProvider.createClient(EchoClient.class);
 
         //connect to server

@@ -1,7 +1,8 @@
 package de.proto4j.network.objects; //@date 28.01.2022
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import de.proto4j.internal.io.Proto4jReader;
+import de.proto4j.internal.io.Proto4jWriter;
+
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -10,8 +11,8 @@ public class ObjectExchangeImpl extends ObjectExchange {
     private final ObjectConnection connection;
     private final Object           message;
 
-    private InputStream  ris;
-    private OutputStream ros;
+    private Proto4jReader  ris;
+    private Proto4jWriter ros;
 
     private boolean closed;
 
@@ -33,12 +34,12 @@ public class ObjectExchangeImpl extends ObjectExchange {
     }
 
     @Override
-    public InputStream getRequestBody() {
+    public Proto4jReader getRequestBody() {
         return ris;
     }
 
     @Override
-    public OutputStream getResponseBody() {
+    public Proto4jWriter getResponseBody() {
         return ros;
     }
 
@@ -55,7 +56,7 @@ public class ObjectExchangeImpl extends ObjectExchange {
     }
 
     @Override
-    public void setStreams(InputStream i, OutputStream o) {
+    public void setStreams(Proto4jReader i, Proto4jWriter o) {
         ris = i;
         ros = o;
     }

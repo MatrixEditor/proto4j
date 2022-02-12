@@ -5,35 +5,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-public final class SimpleBeanCacheList implements Iterable<SimpleBeanCacheList.SimpleBeanCache> {
+public final class SimpleBeanCacheList implements Iterable<SimpleBeanCache> {
 
     private final List<SimpleBeanCache> beanCaches = new LinkedList<>();
-
-    public static class SimpleBeanCache {
-        private Object   instance;
-        private Class<?> mappedClass;
-
-        public SimpleBeanCache(Class<?> mappedClass, Object instance) {
-            this.instance    = instance;
-            this.mappedClass = mappedClass;
-        }
-
-        public Object getInstance() {
-            return instance;
-        }
-
-        public void setInstance(Object instance) {
-            this.instance = instance;
-        }
-
-        public Class<?> getMappedClass() {
-            return mappedClass;
-        }
-
-        public void setMappedClass(Class<?> mappedClass) {
-            this.mappedClass = mappedClass;
-        }
-    }
 
     public int size() {
         return beanCaches.size();

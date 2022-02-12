@@ -1,19 +1,38 @@
 package de.proto4j.internal.model.bean; //@date 24.01.2022
 
+
+import de.proto4j.stream.SequenceStream;
+import de.proto4j.stream.Streams;
+
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 public class MapBeanManager implements BeanManager {
 
     private final Map<Class<? extends Annotation>, SimpleBeanCacheList> beanCache = new HashMap<>();
 
-    @Override
-    public SimpleBeanCacheList findAll(Class<? extends Annotation> type) {
-        if (type != null && beanCache.containsKey(type)) {
-            return beanCache.get(type);
+    private SequenceStream<SimpleBeanCache> from(SimpleBeanCacheList list) {
+        List<SimpleBeanCache> l = new ArrayList<>();
+        for (SimpleBeanCache simpleBeanCache : list) {
+            l.add(simpleBeanCache);
         }
-        return new SimpleBeanCacheList();
+        return Streams.prepare(l);
+    }
+
+    @Override
+    public SequenceStream<SimpleBeanCache> findAll(Predicate<Class<? extends Annotation>> predicate) {
+        if (predicate != null) {
+            for (Map.Entry<Class<? extends Annotation>, SimpleBeanCacheList> e : beanCache.entrySet()) {
+                if (predicate.test(e.getKey())) {
+                    return from(e.getValue());
+                }
+            }
+        }
+        return Streams.emptySequencedStream();
     }
 
     @Override

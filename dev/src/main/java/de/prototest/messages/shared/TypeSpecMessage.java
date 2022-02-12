@@ -2,7 +2,7 @@ package de.prototest.messages.shared; //@date 05.02.2022
 
 import de.proto4j.annotation.message.Component;
 import de.proto4j.annotation.message.Message;
-import de.proto4j.serialization.TypeSpec;
+import de.proto4j.serialization.desc.TypeSpec;
 
 @Message
 public class TypeSpecMessage {

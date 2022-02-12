@@ -1,6 +1,6 @@
 package de.proto4j.network.objects.client; //@date 29.01.2022
 
-import de.proto4j.annotation.server.Configuration;
+import de.proto4j.annotation.AnnotationLookup;
 import de.proto4j.annotation.server.requests.selection.Selector;
 import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
@@ -217,8 +217,8 @@ class ClientImpl {
                     return;
                 }
                 certificateSpec = cert;
-                rin          = new ObjectReader(channel, getMessageTypes(), certificateSpec.getPublicKey());
-                rout         = new ObjectWriter(channel, certificateSpec.getPublicKey());
+                rin             = new ObjectReader(channel, getMessageTypes(), certificateSpec.getPublicKey());
+                rout            = new ObjectWriter(channel, certificateSpec.getPublicKey());
 
                 conn.setParameters(rout, channel, rin, null);
                 connections.put(channel, conn);
@@ -228,7 +228,7 @@ class ClientImpl {
             }
 
 
-            if (configuration.contains(Configuration.BY_CONNECTION)) {
+            if (configuration.contains(AnnotationLookup.CONF_BY_CONNECTION)) {
                 if (!finished && channel.isConnected()) {
                     SocketAddress remote;
                     try {

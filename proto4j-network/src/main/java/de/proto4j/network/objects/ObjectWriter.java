@@ -2,7 +2,7 @@ package de.proto4j.network.objects; //@date 08.02.2022
 
 import de.proto4j.internal.io.KeyBasedWriter;
 import de.proto4j.security.asymmetric.Proto4jAsymKeyProvider;
-import de.proto4j.serialization.DescProviderFactory;
+import de.proto4j.serialization.desc.DescProviderFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -14,7 +14,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 
-import static de.proto4j.serialization.DescProviderFactory.RF;
+import static de.proto4j.serialization.desc.DescProviderFactory.RF;
 
 public class ObjectWriter extends KeyBasedWriter {
 

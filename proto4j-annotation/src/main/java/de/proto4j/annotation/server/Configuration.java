@@ -39,35 +39,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface Configuration {
 
-    String BY_VALUE = "byValue";
-
-    String BY_CONNECTION = "byConnection";
-
-    String IGNORE_VALUES = "ignoreValues";
-
     String[] value();
 
-    public static class Lookup {
-        public static boolean areValuesIgnored(Class<?> c) {
-            return hasConfiguration(c, IGNORE_VALUES);
-        }
-
-        public static boolean isByConnection(Class<?> c) {
-            return hasConfiguration(c, BY_CONNECTION);
-        }
-
-        public static boolean isByValue(Class<?> c) {
-            return hasConfiguration(c, BY_VALUE);
-        }
-
-        public static boolean hasConfiguration(Class<?> c, String conf) {
-            if (c == null) throw new NullPointerException("main-class can not be null");
-            if (c.isAnnotationPresent(Configuration.class)) {
-                for(String s : c.getDeclaredAnnotation(Configuration.class).value()) {
-                    if (s.equals(conf)) return true;
-                }
-            }
-            return false;
-        }
-    }
 }

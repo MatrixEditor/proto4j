@@ -1,7 +1,8 @@
 package de.proto4j.network.objects; //@date 28.01.2022
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import de.proto4j.internal.io.Proto4jReader;
+import de.proto4j.internal.io.Proto4jWriter;
+
 import java.net.InetSocketAddress;
 
 public abstract class ObjectExchange {
@@ -10,15 +11,15 @@ public abstract class ObjectExchange {
 
     public abstract void close();
 
-    public abstract InputStream getRequestBody();
+    public abstract Proto4jReader getRequestBody();
 
-    public abstract OutputStream getResponseBody();
+    public abstract Proto4jWriter getResponseBody();
 
     public abstract InetSocketAddress getRemoteAddress();
 
     public abstract InetSocketAddress getLocalAddress();
 
-    protected abstract void setStreams(InputStream i, OutputStream o);
+    protected abstract void setStreams(Proto4jReader i, Proto4jWriter o);
 
     public abstract ObjectPrincipal getPrincipal();
 

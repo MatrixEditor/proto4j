@@ -1,6 +1,6 @@
 package de.proto4j.internal.method; //@date 02.02.2022
 
-import de.proto4j.annotation.server.requests.Param;
+import de.proto4j.annotation.Markup;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
@@ -22,16 +22,16 @@ public class MethodLookup {
                 if (parameters[0].getType().isAssignableFrom(o.getClass())
                         || parameters[0].getType().isAssignableFrom(includeParameter)) {
                     return true;
-                } else if (parameters[0].isAnnotationPresent(Param.class)) {
-                    Field f = hasField(parameters[0].getDeclaredAnnotation(Param.class).value(), o);
+                } else if (Markup.isParam(parameters[0])) {
+                    Field f = hasField(Markup.getParamMarkup(parameters[0]).value(), o);
                     return f != null && parameters[0].getType().isAssignableFrom(f.getType());
                 }
                 return false;
 
             default:
                 for (Parameter p : parameters) {
-                    if (p.isAnnotationPresent(Param.class)) {
-                        Field f = hasField(p.getDeclaredAnnotation(Param.class).value(), o);
+                    if (Markup.isParam(p)) {
+                        Field f = hasField(Markup.getParamMarkup(p).value(), o);
                         if (f == null) {
                             if (p.getType().isAssignableFrom(includeParameter))
                                 continue;
@@ -62,7 +62,7 @@ public class MethodLookup {
                     return new Object[]{o};
                 } else if (parameters[0].getType().isAssignableFrom(o.getClass())) {
                     return new Object[] {exchange};
-                } else if (parameters[0].isAnnotationPresent(Param.class)) {
+                } else if (Markup.isParam(parameters[0])) {
                     Object[] args = new Object[]{get(parameters[0], o, exchange)};
                     if (args[0] != null) {
                         return args;
@@ -85,7 +85,7 @@ public class MethodLookup {
         if (p.getType().isAssignableFrom(o.getClass())) return o;
         if (p.getType().isAssignableFrom(exchange.getClass())) return exchange;
 
-        String vname = p.getDeclaredAnnotation(Param.class).value();
+        String vname = Markup.getParamMarkup(p).value();
         if (vname.length() > 0) {
             Field f0 = hasField(vname, o);
             if (f0 == null) {

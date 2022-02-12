@@ -3,24 +3,16 @@ package de.proto4j.network.http; //@date 25.01.2022
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import de.proto4j.annotation.http.Http;
-import de.proto4j.annotation.http.WebServer;
-import de.proto4j.annotation.http.requests.HttpRequestController;
-import de.proto4j.annotation.http.requests.HttpRequestListener;
-import de.proto4j.annotation.http.requests.HttpResponseBody;
+import de.proto4j.annotation.Markup;
 import de.proto4j.annotation.http.requests.HttpResponseType;
-import de.proto4j.annotation.server.requests.ResponseBody;
-import de.proto4j.annotation.threding.CommandExecutor;
-import de.proto4j.internal.model.Reflections;
-import de.proto4j.internal.model.bean.BeanManager;
-import de.proto4j.internal.model.bean.MapBeanManager;
-import de.proto4j.internal.model.bean.SimpleBeanCacheList;
-import de.proto4j.internal.model.bean.UnmodifiableBeanManager;
+import de.proto4j.internal.Packages;
+import de.proto4j.internal.model.bean.*;
 import de.proto4j.network.http.invocation.HttpExchangeProcessor;
 import de.proto4j.network.http.invocation.ParameterProcessor;
 import de.proto4j.network.http.response.EntityResponseHandler;
 import de.proto4j.network.http.response.ResponseInvocationHandler;
 import de.proto4j.network.http.response.StringResponseHandler;
+import de.proto4j.stream.SequenceStream;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -36,35 +28,30 @@ import java.util.concurrent.Executor;
 public final class WebServlet {
 
     public static HttpServerContext runHttpServer(Class<?> mainClass) throws IOException {
-        if (mainClass != null && mainClass.isAnnotationPresent(WebServer.class)) {
-            if (!mainClass.isAnnotationPresent(Http.class)) {
+        if (mainClass != null && Markup.isWebServer(mainClass)) {
+            if (!Markup.isHttp(mainClass)) {
                 log(ErrorMessage.HTTP_NOT_DEFINED, mainClass.getSimpleName());
             }
 
-            WebServer ws = mainClass.getDeclaredAnnotation(WebServer.class);
-            HttpServer server = HttpServer.create(new InetSocketAddress(ws.port()), 0);
+            InetSocketAddress address  = new InetSocketAddress(Markup.getWebServerMarkup(mainClass).port());
+            HttpServer        server   = HttpServer.create(address, 0);
+            BeanManager       manager  = new MapBeanManager();
+            Object            executor = null;
 
-            BeanManager   manager = new MapBeanManager();
-            Set<Class<?>> classes = Reflections.getClassesFromMain(mainClass);
+            SequenceStream<Class<?>> stream = Packages.readClasses(mainClass);
 
-            for (Class<?> controller : Reflections.findByAnnotationAsSet(classes, c0 -> {
-                return c0.isAnnotationPresent(HttpRequestController.class);
-            })) {
-                manager.mapIfAbsent(controller, HttpRequestController.class);
-            }
+            stream.slice(Markup::isHttpController).forEach(x -> BeanManaging.mapHttpController(manager, x));
 
-            Map<String, RouteCache> webRoutes = createRoutes(manager.findAll(HttpRequestController.class));
+
+            Map<String, RouteCache> webRoutes = createRoutes(manager.findAll(Markup::isHttpController));
             webRoutes.forEach((s, rc) -> server.createContext(s, new ServerInvocationHandler(rc)));
 
-            Object executor = null;
-            for (Class<?> e : Reflections.findByAnnotationAsSet(classes, c0 -> {
-                return c0.isAnnotationPresent(CommandExecutor.class);
-            }))
-                try {
-                    if (e.isAssignableFrom(Executor.class)) {
-                        executor = e.getDeclaredConstructor().newInstance();
-                    }
-                } catch (Exception _e) { /*just gnore that, maybe a log entry*/ }
+            try {
+                Class<?> e = stream.find(Markup::isCommandExecutor);
+                if (e.isAssignableFrom(Executor.class)) {
+                    executor = e.getDeclaredConstructor().newInstance();
+                }
+            } catch (Exception _e) { /*just ignore that, maybe a log entry*/ }
 
             server.setExecutor(executor != null ? (Executor) executor : null); //maybe add annotation here
             synchronized (WebServlet.class) {
@@ -87,19 +74,19 @@ public final class WebServlet {
         System.out.printf(em.getMessage(), format);
     }
 
-    private static Map<String, RouteCache> createRoutes(SimpleBeanCacheList beanList) {
+    private static Map<String, RouteCache> createRoutes(SequenceStream<SimpleBeanCache> beanList) {
         Map<String, RouteCache> routes = new HashMap<>();
-        if (beanList.isEmpty()) return routes;
+        if (beanList.size() == 0) return routes;
 
-        beanList.iterator().forEachRemaining(c -> {
-            String baseMapping = c.getMappedClass().getDeclaredAnnotation(HttpRequestController.class).mapping();
+        beanList.forEach(c -> {
+            String baseMapping = Markup.getHttpControllerMarkup(c.getMappedClass()).mapping();
             if (baseMapping.endsWith("/")) baseMapping = baseMapping.substring(baseMapping.length() - 1);
 
             for (Method m : c.getMappedClass().getDeclaredMethods()) {
                 if (Modifier.isStatic(m.getModifiers())) continue;
 
-                if (m.isAnnotationPresent(HttpRequestListener.class)) {
-                    String path = m.getDeclaredAnnotation(HttpRequestListener.class).path();
+                if (Markup.isHttpListener(m)) {
+                    String path = Markup.getHttpListenerMarkup(m).path();
                     if (path.length() == 0 || path.equals("/")) path = baseMapping;
                     else path = baseMapping + "/" + path;
 
@@ -144,9 +131,9 @@ public final class WebServlet {
                     }
                 }
 
-                if (response != null && m.isAnnotationPresent(HttpResponseBody.class)) {
+                if (response != null && Markup.isHttpResponseBody(m)) {
 
-                    HttpResponseType type = m.getDeclaredAnnotation(HttpResponseBody.class).value();
+                    HttpResponseType type = Markup.getHttpResponseBodyMarkup(m).value();
                     if (response instanceof String) {
                         stringHandler.handle((String) response, exchange, type);
                     } else if (response instanceof ResponseEntity) {
@@ -166,7 +153,7 @@ public final class WebServlet {
         }
 
         private boolean isFirstParameter(Parameter[] parameters) {
-            //X.class.isAssignableFrom(Y.class) <-> X.isSuperClassOf(Y.class)
+            //X.class.isAssignableFrom(Y.class) <-> X.isSuperclassOf(Y.class)
             return (HttpExchange.class.isAssignableFrom(parameters[0].getType()));
         }
 

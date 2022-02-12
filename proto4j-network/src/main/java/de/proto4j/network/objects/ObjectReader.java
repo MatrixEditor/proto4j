@@ -2,7 +2,7 @@ package de.proto4j.network.objects; //@date 08.02.2022
 
 import de.proto4j.internal.io.KeyBasedReader;
 import de.proto4j.security.asymmetric.Proto4jAsymKeyProvider;
-import de.proto4j.serialization.DescProviderFactory;
+import de.proto4j.serialization.desc.DescProviderFactory;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
