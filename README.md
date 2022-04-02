@@ -9,9 +9,9 @@ This project contains a fully implemented client-server infrastructure controlle
 
 **IMPORTANT:** 
     
-    Currently the encryption is disabled due to errors that would be
-    thrown if the payload is bigger than 256 bytes or multiple packets are
-    being send at the same time. In future releases this issue will be
+    Currently the encryption is disabled due to errors if the
+    payload is bigger than 256 bytes or multiple packets are
+    being sent at the same time. In future releases this issue will be
     resolved. Background of this issue is the following situation:
 
     If a client or server is sending multiple packets (asynchronously)
