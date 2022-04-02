@@ -21,6 +21,7 @@ To specify a new message-field the `Component`-annotation is required. The ordin
 
 ### Annotations
 
+
 |     Annotation     | Required | Target | Description                                                                                                               |
 |:------------------:|:--------:|--------|:--------------------------------------------------------------------------------------------------------------------------|
 |      Message       |  `true`  | Class  | indicates that this class will be a new message specification                                                             |

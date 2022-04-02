@@ -1,20 +1,24 @@
-package de.proto4j.serialization.desc; //@date 31.01.2022
+package de.proto4j.serialization; //@date 31.01.2022
 
 import de.proto4j.annotation.message.AllArgsConstructor;
 import de.proto4j.annotation.message.Component;
 import de.proto4j.annotation.message.PacketModifier;
-import de.proto4j.serialization.mapping.PrimitiveMappings;
+import de.proto4j.serialization.desc.FieldDesc;
+import de.proto4j.serialization.desc.MessageDesc;
+import de.proto4j.serialization.desc.TypeSpec;
+import de.proto4j.serialization.desc.TypeSpecField;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.file.ProviderNotFoundException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static de.proto4j.serialization.desc.Member.*;
+import static de.proto4j.serialization.desc.MessageDesc.forType;
 
 public final class DescProviderFactory {
 
@@ -26,20 +30,6 @@ public final class DescProviderFactory {
     public static final String LF_REPLACEMENT        = "%n";
     public static final String RF_REPLACEMENT        = "%r";
     public static final String DELIMITER_REPLACEMENT = "%M";
-
-    public static FieldDesc forType(String valueType) {
-        if (valueType.contains("&"))
-            return new RepeatedFieldDesc();
-        else {
-            if (valueType.contains("!")) {
-                return new TypeSpecField();
-            }
-            try {
-                return PrimitiveMappings.containsName(valueType) ? new PrimitiveFieldDesc() : new RepeatedFieldDesc();
-            } catch (Exception e) {/**/}
-        }
-        throw new ProviderNotFoundException();
-    }
 
     public static StringBuffer allocate(Object message) throws IOException {
         if (message == null) throw new NullPointerException("message is null");
@@ -64,7 +54,8 @@ public final class DescProviderFactory {
                 if (f0.isAnnotationPresent(TypeSpec.class)) {
                     fieldDesc = new TypeSpecField();
                     fieldDesc.addModifier(TYPE_SPEC_MODIFIER);
-                    fieldDesc.setType(f0.getDeclaredAnnotation(TypeSpec.class).value());
+                    fieldDesc.setType(f0.getType());
+                    ((TypeSpecField)fieldDesc).setStYPE(f0.getDeclaredAnnotation(TypeSpec.class).value());
 
                 } else {
                     fieldDesc = forType(f0.getType().getName());
@@ -98,13 +89,17 @@ public final class DescProviderFactory {
 
         //if (decryptedData.length % Proto4jWriter.SHARED_KEY.length != 0)
         //throw new IllegalArgumentException("data has to be a multiple of sharedKey.length");
-
-        String      rep  = new String(decryptedData);
+        int offs = 0;
+        while (decryptedData[offs] < 0) {
+            offs++;
+        }
+        String      rep  = new String(Arrays.copyOfRange(decryptedData, offs, decryptedData.length));
+        rep = rep.replaceAll("\u0000", "");
         MessageDesc desc = new MessageDesc();
         desc.read(rep);
 
         try {
-            String[] h = desc.getName().split("[:][:]");
+            String[] h = desc.getName().split(":");
 
             // This prevents the system from loading untrusted data simply by checking
             // if the class-simpleName is contained in the name-set
@@ -143,7 +138,10 @@ public final class DescProviderFactory {
                 try {
                     Constructor<?> constructor = messageClass.getConstructor(types);
                     return constructor.newInstance(args);
-                } catch (ReflectiveOperationException e) {/**/}
+                } catch (ReflectiveOperationException e) {
+                    System.err.println(e.toString());
+                    /**/
+                }
                 return null;//TODO
             }
 

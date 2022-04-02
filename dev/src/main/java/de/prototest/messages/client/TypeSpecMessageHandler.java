@@ -1,7 +1,7 @@
 package de.prototest.messages.client; //@date 05.02.2022
 
-import de.proto4j.annotation.server.requests.ConnectionHandler;
 import de.proto4j.annotation.server.requests.Controller;
+import de.proto4j.annotation.server.requests.RequestHandler;
 import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
 import de.proto4j.network.objects.ObjectExchange;
@@ -13,7 +13,7 @@ import java.io.IOException;
 @Controller("127.0.0.1")
 public class TypeSpecMessageHandler {
 
-    @ConnectionHandler
+    @RequestHandler
     public void handle(ObjectExchange e) throws IOException {
         Proto4jReader r = (Proto4jReader) e.getRequestBody();
         Proto4jWriter w = (Proto4jWriter) e.getResponseBody();

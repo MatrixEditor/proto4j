@@ -1,6 +1,10 @@
 package de.proto4j.serialization.desc; //@date 31.01.2022
 
+import de.proto4j.serialization.DescProviderFactory;
+import de.proto4j.serialization.mapping.PrimitiveMappings;
+
 import java.io.IOException;
+import java.nio.file.ProviderNotFoundException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -10,7 +14,7 @@ public class MessageDesc extends Member implements ObjectDesc {
     private final List<FieldDesc> fields = new LinkedList<>();
     private Class<?>              messageClass;
 
-    List<FieldDesc> getFields() {
+    public List<FieldDesc> getFields() {
         return fields;
     }
 
@@ -24,14 +28,14 @@ public class MessageDesc extends Member implements ObjectDesc {
 
     @Override
     public String getName() {
-        return String.join("::", messageClass.getName(), messageClass.getSimpleName());
+        return String.join(":", messageClass.getName(), messageClass.getSimpleName());
     }
 
     @Override
     public String serialize() throws IOException {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(getName()).append("::").append(getModifiers()).append(DescProviderFactory.LF);
+        sb.append(getName()).append(":").append(getModifiers()).append(DescProviderFactory.LF);
         for (FieldDesc fd : getFields()) {
             sb.append(fd.serialize());
         }
@@ -49,7 +53,7 @@ public class MessageDesc extends Member implements ObjectDesc {
 
             if (i == 0) {
                 try {
-                    String[] x = s.split("[:][:]");
+                    String[] x = s.split(":");
                     setModifiers(Integer.parseInt(x[2]));
                     messageClass = Class.forName(x[0]);
                 } catch (ClassNotFoundException e) {
@@ -61,7 +65,7 @@ public class MessageDesc extends Member implements ObjectDesc {
 
                     while (tF.hasMoreElements()) {
                         String tk = tF.nextToken();
-                        FieldDesc desc = DescProviderFactory.forType(tk.split("[-]")[2]);
+                        FieldDesc desc = forType(tk.split("[-]")[2]);
 
                         getFields().add((FieldDesc) desc.read(tk));
                     }
@@ -70,5 +74,19 @@ public class MessageDesc extends Member implements ObjectDesc {
             }
         }
         return this;
+    }
+
+    public static FieldDesc forType(String valueType) {
+        if (valueType.contains("&"))
+            return new RepeatedFieldDesc();
+        else {
+            if (valueType.contains("!")) {
+                return new TypeSpecField();
+            }
+            try {
+                return PrimitiveMappings.containsName(valueType) ? new PrimitiveFieldDesc() : new RepeatedFieldDesc();
+            } catch (Exception e) {/**/}
+        }
+        throw new ProviderNotFoundException();
     }
 }

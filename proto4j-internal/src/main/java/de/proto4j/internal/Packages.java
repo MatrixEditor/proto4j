@@ -1,8 +1,8 @@
 package de.proto4j.internal; //@date 12.02.2022
 
 import de.proto4j.annotation.message.PacketModifier;
-import de.proto4j.internal.model.PackageGenerator;
-import de.proto4j.internal.model.PackageScanner;
+import de.proto4j.internal.model.impl.DefaultPackageGenerator;
+import de.proto4j.internal.model.impl.DefaultPackageScanner;
 import de.proto4j.stream.GenericInterruptedStream;
 import de.proto4j.stream.InterruptedStream;
 import de.proto4j.stream.SequenceStream;

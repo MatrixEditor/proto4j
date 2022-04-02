@@ -1,4 +1,4 @@
-package de.proto4j.internal.model;//@date 12.02.2022
+package de.proto4j.internal;//@date 12.02.2022
 
 import de.proto4j.stream.InterruptedStream;
 

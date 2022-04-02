@@ -11,7 +11,7 @@ public final class Proto4jAsymKeyProvider {
     private Proto4jAsymKeyProvider() {}
 
     public static synchronized KeyPair newProto4jKeyPair() throws KeyException, NoSuchAlgorithmException {
-        return createKeyPair(1024, "RSA");
+        return createKeyPair(2048*2, "RSA");
     }
 
     public static KeyPair createKeyPair(String algorithm) throws KeyException, NoSuchAlgorithmException {

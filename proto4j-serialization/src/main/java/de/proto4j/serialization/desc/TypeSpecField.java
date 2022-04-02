@@ -1,5 +1,6 @@
 package de.proto4j.serialization.desc; //@date 04.02.2022
 
+import de.proto4j.serialization.DescProviderFactory;
 import de.proto4j.serialization.Serializer;
 
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.io.IOException;
 public class TypeSpecField extends FieldDesc {
 
     private Serializer serializer;
+    private Class<?> stYPE;
 
     public Serializer getSerializer() {
         return serializer;
@@ -23,9 +25,9 @@ public class TypeSpecField extends FieldDesc {
         sb.append(getName()).append(DescProviderFactory.DEFAULT_DELIMITER).append("[");
         sb.append(getModifiers()).append("]").append(DescProviderFactory.DEFAULT_DELIMITER);
 
-        if (Serializer.class.isAssignableFrom(getType())) {
+        if (Serializer.class.isAssignableFrom(stYPE)) {
             try {
-                setSerializer((Serializer) getType().getDeclaredConstructor().newInstance());
+                setSerializer((Serializer) stYPE.getDeclaredConstructor().newInstance());
             } catch (ReflectiveOperationException e) {
                 throw new IllegalCallerException("could not initialize serializer");
             }
@@ -35,7 +37,7 @@ public class TypeSpecField extends FieldDesc {
             valueDesc = NULL_VALUE;
         else valueDesc = getSerializer().serialize(getValue());
 
-        sb.append(getValue().getClass().getName()).append("!").append(getSerializer().getClass().getName()).append(
+        sb.append(getType().getName()).append("!").append(getSerializer().getClass().getName()).append(
                 DescProviderFactory.DEFAULT_DELIMITER);
         sb.append(valueDesc.length()).append(DescProviderFactory.DEFAULT_DELIMITER).append(valueDesc);
 
@@ -74,5 +76,9 @@ public class TypeSpecField extends FieldDesc {
             return null;
         }
         return this;
+    }
+
+    public void setStYPE(Class<?> stYPE) {
+        this.stYPE = stYPE;
     }
 }

@@ -156,7 +156,7 @@ public final class ServerProvider {
         }
     }
 
-    private static class ServerContextImpl implements TypeContext {
+    public static class ServerContextImpl implements TypeContext {
         private final ObjectServer  server;
         private final BeanManager   manager;
         private final Set<Class<?>> classes;

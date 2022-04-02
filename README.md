@@ -5,7 +5,20 @@
 ![GitHub stars](https://img.shields.io/github/stars/matrixeditor/proto4j?style=flat)
 ![GitHub forks](https://img.shields.io/github/forks/matrixeditor/proto4j?style=flat)
 
-This project contains a fully implemented client-server infrastructure controlled by Java-Annotations. Serialization is done with AES-Encryption and an http-server based on SUN-Webserver is also delivered.
+This project contains a fully implemented client-server infrastructure controlled by Java-Annotations. Serialization is done with AES-Encryption and a http-server based on SUN-Webserver is also delivered.
+
+**IMPORTANT:** 
+    
+    Currently the encryption is disabled due to errors that would be
+    thrown if the payload is bigger than 256 bytes or multiple packets are
+    being send at the same time. In future releases this issue will be
+    resolved. Background of this issue is the following situation:
+
+    If a client or server is sending multiple packets (asynchronously)
+    scheduled to a receiver, sometimes the received messages are cut off
+    in the middle of the content. The issue is solved temporarily with a
+    `Queue` of objects that have been received additionally to the original 
+    packet. 
 
 ## Prerequisites
 

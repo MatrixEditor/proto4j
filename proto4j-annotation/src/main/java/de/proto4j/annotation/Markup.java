@@ -47,7 +47,7 @@ public final class Markup {
     }
 
     private static boolean check(AnnotatedElement e, Class<? extends Annotation> a) {
-        return e.isAnnotationPresent(a);
+        return e.isAnnotationPresent(a) || e == a;
     }
 
     public static WebServer getWebServerMarkup(AnnotatedElement v) {

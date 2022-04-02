@@ -1,9 +1,9 @@
-package de.proto4j.internal; //@date 12.02.2022
+package de.proto4j.internal.model.impl; //@date 12.02.2022
 
+import de.proto4j.internal.PackageScanner;
 import de.proto4j.internal.logger.Logger;
 import de.proto4j.internal.logger.PrintColor;
 import de.proto4j.internal.logger.PrintService;
-import de.proto4j.internal.model.PackageScanner;
 import de.proto4j.stream.InterruptedStream;
 
 import java.io.BufferedReader;
@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
-class DefaultPackageScanner implements PackageScanner {
+public class DefaultPackageScanner implements PackageScanner {
 
     private static final Logger LOGGER = PrintService.createLogger(PackageScanner.class);
 

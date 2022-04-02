@@ -1,22 +1,15 @@
 package de.proto4j.network.objects; //@date 08.02.2022
 
 import de.proto4j.internal.io.KeyBasedWriter;
-import de.proto4j.security.asymmetric.Proto4jAsymKeyProvider;
-import de.proto4j.serialization.desc.DescProviderFactory;
+import de.proto4j.serialization.DescProviderFactory;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-
-import static de.proto4j.serialization.desc.DescProviderFactory.RF;
 
 public class ObjectWriter extends KeyBasedWriter {
+
+    public static final char END_BYTE = '\t';
 
     public ObjectWriter(SocketChannel chan, Key key) {
         super(chan, key);
@@ -27,8 +20,9 @@ public class ObjectWriter extends KeyBasedWriter {
         if (isClosed()) throw new IOException("stream is closed");
 
         if (message == null) throw new NullPointerException("cannot write null-object");
-        try {
+        //try {
             StringBuffer buf = DescProviderFactory.allocate(message);
+            /*
             if (buf.capacity() % 16 != 0) {
                 int cap = buf.capacity();
                 while (cap % 16 != 0) {
@@ -36,15 +30,23 @@ public class ObjectWriter extends KeyBasedWriter {
                     cap++;
                 }
             }
+
+
             Cipher    c   = Proto4jAsymKeyProvider.getCipherInstance();
             c.init(Cipher.ENCRYPT_MODE, getKey());
 
-            byte[] bytes = c.doFinal(buf.toString().getBytes());
+            c.update(buf.toString().getBytes(StandardCharsets.UTF_16));
+
+             */
+            buf.append(END_BYTE);
+            byte[] bytes = buf.toString().getBytes();
             write(bytes);
+            /*
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
-            // log
-        } catch (IllegalBlockSizeException | BadPaddingException e) {
             throw new IllegalStateException("could not write data!");
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            e.printStackTrace();
         }
+             */
     }
 }

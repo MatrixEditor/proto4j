@@ -271,7 +271,10 @@ class ServerImpl {
                 }
             } catch (IOException ioe) {
                 if (ioe instanceof AsynchronousCloseException) {
-                    if (chan != null) allConnections.remove(chan);
+                    if (chan != null) {
+
+                        allConnections.remove(chan);
+                    }
                 }
                 LOGGER.except(PrintColor.DARK_RED, ioe);
             }

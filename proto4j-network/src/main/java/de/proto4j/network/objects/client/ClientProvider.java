@@ -90,6 +90,7 @@ public final class ClientProvider {
         @Override
         public void buildConfiguration() {
             conf.add(AnnotationLookup.ConfigurationLookup.isByConnection(main) ? CONF_BY_CONNECTION : CONF_BY_VALUE);
+            oc.getConfiguration().addAll(conf);
         }
 
         @Override

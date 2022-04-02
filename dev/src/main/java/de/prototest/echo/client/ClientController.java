@@ -1,7 +1,7 @@
 package de.prototest.echo.client; //@date 30.01.2022
 
-import de.proto4j.annotation.server.requests.ConnectionHandler;
 import de.proto4j.annotation.server.requests.Controller;
+import de.proto4j.annotation.server.requests.RequestHandler;
 import de.proto4j.annotation.threding.Parallel;
 import de.proto4j.internal.io.Proto4jReader;
 import de.proto4j.internal.io.Proto4jWriter;
@@ -19,7 +19,7 @@ public class ClientController {
 
     private final Logger logger = PrintService.createLogger(ClientController.class);
 
-    @ConnectionHandler
+    @RequestHandler
     @Parallel
     public void onConnectionEstablished(ObjectExchange exchange) throws IOException {
         Proto4jReader in  = (Proto4jReader) exchange.getRequestBody();

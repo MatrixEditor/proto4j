@@ -42,7 +42,6 @@ public final class WebServlet {
 
             stream.slice(Markup::isHttpController).forEach(x -> BeanManaging.mapHttpController(manager, x));
 
-
             Map<String, RouteCache> webRoutes = createRoutes(manager.findAll(Markup::isHttpController));
             webRoutes.forEach((s, rc) -> server.createContext(s, new ServerInvocationHandler(rc)));
 

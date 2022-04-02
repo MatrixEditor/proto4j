@@ -1,4 +1,4 @@
-package de.proto4j.internal.model;//@date 23.01.2022
+package de.proto4j.internal;//@date 23.01.2022
 
 import java.util.Enumeration;
 

@@ -1,5 +1,6 @@
 package de.proto4j.serialization.desc; //@date 31.01.2022
 
+import de.proto4j.serialization.DescProviderFactory;
 import de.proto4j.serialization.mapping.Mapping;
 import de.proto4j.serialization.mapping.PrimitiveMappings;
 
@@ -36,12 +37,15 @@ public class PrimitiveFieldDesc extends FieldDesc {
 
         if (hasModifier(OPTIONAL_MODIFIER)) {
             if (values[4].equals("null")) {
-                setValue(null);
+
                 try {
                     setType(Class.forName(values[2]));
                 } catch (ClassNotFoundException e) {
                     throw new IllegalCallerException("could not create type");
                 }
+                if (PrimitiveMappings.contains(getType()) && getType() != String.class) {
+                    setValue(0);
+                } else setValue(null);
                 return this;
             }
         }

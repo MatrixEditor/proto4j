@@ -1,7 +1,5 @@
 package de.proto4j.network.objects; //@date 28.01.2022
 
-import de.proto4j.network.objects.ObjectAuthenticator;
-import de.proto4j.network.objects.ObjectContext;
 import de.proto4j.network.objects.client.ObjectClient;
 
 import java.util.HashMap;

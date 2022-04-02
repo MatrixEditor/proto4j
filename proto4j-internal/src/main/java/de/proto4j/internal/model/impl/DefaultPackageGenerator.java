@@ -1,9 +1,11 @@
-package de.proto4j.internal; //@date 12.02.2022
+package de.proto4j.internal.model.impl; //@date 12.02.2022
 
+import de.proto4j.internal.MessageRoot;
+import de.proto4j.internal.PackageGenerator;
+import de.proto4j.internal.RootPackage;
 import de.proto4j.internal.logger.Logger;
 import de.proto4j.internal.logger.PrintColor;
 import de.proto4j.internal.logger.PrintService;
-import de.proto4j.internal.model.PackageGenerator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-class DefaultPackageGenerator implements PackageGenerator {
+public class DefaultPackageGenerator implements PackageGenerator {
 
     private static final Logger LOGGER = PrintService.createLogger(PackageGenerator.class);
 

@@ -1,6 +1,6 @@
 package de.proto4j.serialization.mapping; //@date 01.02.2022
 
-import de.proto4j.serialization.desc.DescProviderFactory;
+import de.proto4j.serialization.DescProviderFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -87,6 +87,8 @@ public class PrimitiveMappings {
                 f = Short::valueOf; c = short.class; break;
             case "long":
                 f = Long::valueOf; c = long.class; break;
+            case "byte":
+                f = Byte::valueOf; c = byte.class; break;
             default:
                 throw new IllegalStateException();
         }

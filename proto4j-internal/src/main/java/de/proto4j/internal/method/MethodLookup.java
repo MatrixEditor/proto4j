@@ -14,6 +14,7 @@ public class MethodLookup {
     public static boolean select(Object o, Parameter[] parameters, Class<?> includeParameter) {
         if (o == null || parameters == null) return false;
 
+
         switch (parameters.length) {
             case 0:
                 return false;
